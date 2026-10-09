@@ -1,0 +1,9 @@
+@reference "../../globals.css";
+
+.input-field {
+	@apply w-full px-3 py-2 border border-zinc-700/60 rounded focus:outline-none focus:border-primary bg-transparent text-white transition-colors mt-1;
+}
+
+.btn-primary {
+	@apply w-full py-2 text-white font-semibold rounded transition duration-500 ease-in-out mt-1 hover:scale-103;
+}

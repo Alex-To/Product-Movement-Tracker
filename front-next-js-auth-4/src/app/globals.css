@@ -1,0 +1,32 @@
+@import 'tailwindcss';
+
+@theme {
+	--color-primary: var(--color-emerald-600);
+	--color-secondary: var(--color-rose-500);
+
+	--default-transition-duration: 400ms;
+	--default-transition-timing-function: ease-in-out;
+}
+
+html {
+	@apply bg-zinc-950 text-white;
+}
+
+body {
+	@apply px-8;
+	font-size: 20px;
+	margin: 0 auto;
+}
+
+input,
+button {
+	font-size: 20px;
+}
+
+h1 {
+	@apply text-4xl;
+}
+
+h2 {
+	@apply text-2xl;
+}
