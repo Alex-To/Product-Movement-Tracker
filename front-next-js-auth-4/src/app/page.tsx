@@ -1,13 +1,12 @@
-import { ADMIN_PAGES } from '@/config/pages/admin.config'
 import { DASHBOARD_PAGES } from '@/config/pages/dashboard.config'
+import { KITCHEN_PAGES } from '@/config/pages/kitchen.config'
 import { PUBLIC_PAGES } from '@/config/pages/public.config'
 import Link from 'next/link'
 
 const pages = [
 	PUBLIC_PAGES.LOGIN,
 	DASHBOARD_PAGES.PROFILE,
-	ADMIN_PAGES.HOME,
-	ADMIN_PAGES.MANAGER
+	KITCHEN_PAGES.HOME
 ]
 
 export default function Home() {
