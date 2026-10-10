@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common'
 import { ConfigModule } from '@nestjs/config'
 import { AuthModule } from './auth/auth.module'
+import { KitchenModule } from './kitchen/kitchen.module'
 import { UserModule } from './user/user.module'
 
 @Module({
@@ -9,7 +10,8 @@ import { UserModule } from './user/user.module'
 			isGlobal: true
 		}),
 		AuthModule,
-		UserModule
+		UserModule,
+		KitchenModule
 	]
 })
 export class AppModule {}

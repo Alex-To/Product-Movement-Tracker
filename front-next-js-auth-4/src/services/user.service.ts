@@ -7,10 +7,6 @@ class UserService {
 	async fetchProfile() {
 		return instance.get<IUser>(`${this._BASE_URL}/profile`)
 	}
-
-	async fetchList() {
-		return instance.get<IUser[]>(`${this._BASE_URL}/list`)
-	}
 }
 
 export default new UserService()
