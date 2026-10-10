@@ -8,15 +8,16 @@ datasource db {
 }
 
 model User {
-  id       String @id @default(cuid())
-  login    String @unique
-  name     String
-  password String
-  role     Role   @default(WAITER)
+  id             String          @id @default(cuid())
+  login          String          @unique
+  name           String
+  password       String
+  role           Role            @default(WAITER)
   deliveries     Delivery[]
   orders         Order[]
   stockMovements StockMovement[]
   stopLists      StopList[]
+  messages       Message[]
 
   @@map("users")
 }
@@ -31,6 +32,10 @@ enum Role {
 enum StopType {
   AUTO
   MANUAL
+}
+
+enum MessageType {
+  WRITE_OFF
 }
 
 model Unit {
@@ -150,9 +155,26 @@ model StockMovement {
   createrId String @map("creater_id")
   creater   User   @relation(fields: [createrId], references: [id])
 
+  messages Message[]
+
   @@map("stock_movement")
 }
 
+model Message {
+  id         String      @id @default(cuid()) @map("id_message")
+  type       MessageType
+  createDate DateTime    @default(now()) @map("create_date")
+  isRead     Boolean     @default(false) @map("is_read")
+
+  idRecipient String @map("id_recipient")
+  recipient   User   @relation(fields: [idRecipient], references: [id], onDelete: Cascade)
+
+  idStockMovement String?        @map("id_stock_movement")
+  stockMovement   StockMovement? @relation(fields: [idStockMovement], references: [id], onDelete: Cascade)
+
+  @@index([idRecipient, isRead])
+  @@map("messages")
+}
 
 model StopList {
   id   String   @id @default(cuid()) @map("id_stop_list")
