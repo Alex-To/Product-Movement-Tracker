@@ -13,6 +13,10 @@ model User {
   name     String
   password String
   role     Role   @default(WAITER)
+  deliveries     Delivery[]
+  orders         Order[]
+  stockMovements StockMovement[]
+  stopLists      StopList[]
 
   @@map("users")
 }
@@ -22,4 +26,144 @@ enum Role {
   MANAGER
   WAITER
   KITCHEN
+}
+
+enum StopType {
+  AUTO
+  MANUAL
+}
+
+model Unit {
+  id   String @id @default(cuid()) @map("id_unit")
+  name String @unique
+
+  products Product[]
+
+  @@map("units")
+}
+
+model Product {
+  id          String @id @default(cuid()) @map("id_product")
+  nameProduct String @map("name_product")
+
+  idUnit String @map("id_unit")
+  unit   Unit   @relation(fields: [idUnit], references: [id])
+
+  batches         Batch[]
+  dishIngredients DishIngredient[]
+
+  @@map("products")
+}
+
+model Delivery {
+  id         String   @id @default(cuid()) @map("id_delivery")
+  number     String   @unique
+  createDate DateTime @default(now()) @map("create_date")
+
+  createrId String @map("creater_id")
+  creater   User   @relation(fields: [createrId], references: [id])
+
+  batches Batch[]
+
+  @@map("delivery")
+}
+
+model Batch {
+  id    String   @id @default(cuid()) @map("id_batch")
+  count Decimal  @db.Decimal(12, 3)
+  EXP   DateTime @map("exp")
+
+  idProduct String  @map("id_product")
+  product   Product @relation(fields: [idProduct], references: [id])
+
+  idDelivery String   @map("id_delivery")
+  delivery   Delivery @relation(fields: [idDelivery], references: [id])
+
+  stockMovements StockMovement[]
+
+  @@index([idProduct, EXP])
+  @@map("batch")
+}
+
+model Order {
+  id         String   @id @default(cuid()) @map("id_order")
+  createDate DateTime @default(now()) @map("create_date")
+
+  createrId String @map("creater_id")
+  creater   User   @relation(fields: [createrId], references: [id])
+
+  items          OrderItem[]
+  stockMovements StockMovement[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id    String @id @default(cuid()) @map("id_order_item")
+  count Int
+
+  idOrder String @map("id_order")
+  order   Order  @relation(fields: [idOrder], references: [id], onDelete: Cascade)
+
+  idDish String @map("id_dish")
+  dish   Dish   @relation(fields: [idDish], references: [id])
+
+  @@map("order_item")
+}
+
+model Dish {
+  id   String @id @default(cuid()) @map("id_dish")
+  name String
+
+  ingredients DishIngredient[]
+  orderItems  OrderItem[]
+  stopLists   StopList[]
+
+  @@map("dishes")
+}
+
+model DishIngredient {
+  id    String  @id @default(cuid()) @map("id_dish_ingredient")
+  count Decimal @db.Decimal(12, 3)
+
+  idDish String @map("id_dish")
+  dish   Dish   @relation(fields: [idDish], references: [id], onDelete: Cascade)
+
+  idProduct String  @map("id_product")
+  product   Product @relation(fields: [idProduct], references: [id])
+
+  @@unique([idDish, idProduct])
+  @@map("dish_ingredients")
+}
+
+model StockMovement {
+  id         String   @id @default(cuid()) @map("id_stock_movement")
+  count      Decimal  @db.Decimal(12, 3)
+  createDate DateTime @default(now()) @map("create_date")
+
+  idBatch String @map("id_batch")
+  batch   Batch  @relation(fields: [idBatch], references: [id])
+
+  idOrder String? @map("id_order")
+  order   Order?  @relation(fields: [idOrder], references: [id])
+
+  createrId String @map("creater_id")
+  creater   User   @relation(fields: [createrId], references: [id])
+
+  @@map("stock_movement")
+}
+
+
+model StopList {
+  id   String   @id @default(cuid()) @map("id_stop_list")
+  type StopType
+
+  idDish String @map("id_dish")
+  dish   Dish   @relation(fields: [idDish], references: [id], onDelete: Cascade)
+
+  createrId String? @map("creater_id")
+  creater   User?   @relation(fields: [createrId], references: [id])
+
+  @@unique([idDish, type])
+  @@map("stop_list")
 }
