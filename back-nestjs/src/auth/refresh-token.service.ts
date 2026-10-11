@@ -14,8 +14,8 @@ export class RefreshTokenService {
 			httpOnly: true,
 			domain: 'localhost',
 			expires: expiresIn,
-			secure: true, // true if production
-			sameSite: 'none' // lax if production
+			secure: true,
+			sameSite: 'none'
 		})
 	}
 
@@ -24,8 +24,8 @@ export class RefreshTokenService {
 			httpOnly: true,
 			domain: 'localhost',
 			expires: new Date(0),
-			secure: true, // true if production
-			sameSite: 'none' // lax if production
+			secure: true,
+			sameSite: 'none'
 		})
 	}
 }

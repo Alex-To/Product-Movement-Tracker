@@ -1,12 +1,5 @@
 @import 'tailwindcss';
 
-/*
- * Дизайн-система «Голубые»: интерфейс голубой и графитовый,
- * единственный тёплый цвет fire значит «горит».
- * Шрифты лежат в проекте (@fontsource, подключены в layout.tsx) —
- * Google Fonts при сборке не нужен.
- */
-
 :root {
 	--brand: #1e7bff;
 	--accent: #0f67e8;
@@ -87,7 +80,6 @@
 	--color-danger: var(--danger);
 	--color-danger-tint: var(--danger-tint);
 
-	/* Старые имена, которыми пользуются остальные страницы */
 	--color-primary: var(--accent);
 	--color-secondary: var(--fire);
 
@@ -98,7 +90,6 @@
 	--shadow-card: var(--shadow-card);
 	--shadow-popover: var(--shadow-popover);
 
-	/* Типографика: caption 13/18, body 15/22, title 17/24 */
 	--text-caption: 13px;
 	--text-caption--line-height: 18px;
 	--text-label: 12px;
@@ -127,7 +118,6 @@ select {
 	font: inherit;
 }
 
-/* Заголовки — Unbounded: h1 32/40 700, h2 22/30 600 */
 h1 {
 	@apply font-display text-ink;
 	font-size: 32px;

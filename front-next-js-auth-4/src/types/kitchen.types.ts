@@ -1,5 +1,3 @@
-// Decimal-поля приходят с бэка строкой
-
 export interface IKitchenOrder {
 	id: string
 	createDate: string

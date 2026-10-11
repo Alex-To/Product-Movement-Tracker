@@ -29,7 +29,6 @@ interface IFormValues {
 }
 
 interface Props {
-	// Нет сотрудника — создаём нового
 	user: IUser | null
 	onClose: () => void
 }

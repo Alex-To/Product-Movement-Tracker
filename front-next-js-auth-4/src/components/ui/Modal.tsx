@@ -2,14 +2,16 @@
 
 import { AnimatePresence, m } from 'framer-motion'
 import { type MouseEvent, type ReactNode } from 'react'
+import { twMerge } from 'tailwind-merge'
 
 interface Props {
 	isOpen: boolean
 	onClose: () => void
 	children: ReactNode
+	className?: string
 }
 
-export function Modal({ isOpen, onClose, children }: Props) {
+export function Modal({ isOpen, onClose, children, className }: Props) {
 	const handleBackdropClick = (e: MouseEvent) => {
 		if (e.target === e.currentTarget) {
 			onClose()
@@ -29,7 +31,10 @@ export function Modal({ isOpen, onClose, children }: Props) {
 					<m.div
 						role="dialog"
 						aria-modal="true"
-						className="relative w-[calc(100%-2rem)] max-w-md rounded-lg border border-border bg-surface-raised p-6 text-ink shadow-popover"
+						className={twMerge(
+							'relative max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-md overflow-y-auto rounded-lg border border-border bg-surface-raised p-6 text-ink shadow-popover',
+							className
+						)}
 						initial={{ scale: 0.8 }}
 						animate={{ scale: 1 }}
 						exit={{ scale: 0.8 }}

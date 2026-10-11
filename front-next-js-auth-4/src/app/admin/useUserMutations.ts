@@ -24,7 +24,6 @@ export function useSaveUser(userId: string | null, options: IOptions) {
 				: adminService.createUser(data as IAdminUserCreateData),
 		async onSuccess() {
 			await queryClient.invalidateQueries({ queryKey: USERS_QUERY_KEY })
-			// Админ мог поменять своё имя или логин — обновляем шапку
 			await queryClient.invalidateQueries({ queryKey: ['profile'] })
 			options.onSuccess?.()
 		},

@@ -3,13 +3,15 @@ import { DASHBOARD_PAGES } from '@/config/pages/dashboard.config'
 import { KITCHEN_PAGES } from '@/config/pages/kitchen.config'
 import { PUBLIC_PAGES } from '@/config/pages/public.config'
 import { MANAGER_ROUTES } from '@/features/manager/config/manager.routes'
+import { WAITER_PAGES } from '@/config/pages/waiter.config'
 import Link from 'next/link'
 
 const pages = [
 	PUBLIC_PAGES.LOGIN,
 	DASHBOARD_PAGES.PROFILE,
 	ADMIN_PAGES.HOME,
-	KITCHEN_PAGES.HOME
+	KITCHEN_PAGES.HOME,
+	WAITER_PAGES.HOME
 ]
 
 export default function Home() {

@@ -7,7 +7,7 @@ export function useProfile() {
 	const { data, isLoading } = useQuery({
 		queryKey: ['profile'],
 		queryFn: () => userService.fetchProfile(),
-		refetchInterval: 1800000 // 30 minutes
+		refetchInterval: 1800000
 	})
 
 	const {

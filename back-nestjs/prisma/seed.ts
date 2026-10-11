@@ -3,7 +3,6 @@ import { hash } from 'argon2'
 
 const prisma = new PrismaClient()
 
-// Тестовые сотрудники, пароль у всех: 123456
 const employees = [
 	{ login: 'admin', name: 'Администратор', role: Role.ADMIN },
 	{ login: 'manager', name: 'Менеджер', role: Role.MANAGER },

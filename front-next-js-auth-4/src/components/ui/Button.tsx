@@ -2,7 +2,6 @@ import { type ButtonHTMLAttributes } from 'react'
 import { twMerge } from 'tailwind-merge'
 
 interface Props extends ButtonHTMLAttributes<HTMLButtonElement> {
-	// primary — одно главное действие на экране, остальное — secondary/ghost
 	variant?: 'primary' | 'secondary' | 'ghost'
 	size?: 'sm' | 'md'
 }
