@@ -20,7 +20,8 @@
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "db:push": "prisma db push",
     "db:seed": "prisma db seed",
-    "db:setup": "prisma generate && prisma db push && prisma db seed"
+    "db:migrate": "prisma migrate deploy",
+    "db:setup": "prisma generate && prisma migrate deploy && prisma db seed"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.11",

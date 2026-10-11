@@ -6,9 +6,12 @@ import {
 } from '@nestjs/common'
 import { MessageType, Prisma, Role, StopType } from '@prisma/client'
 import { WriteOffDto } from './dto/write-off.dto'
-
-type Tx = Prisma.TransactionClient
-type Ingredient = { idProduct: string; count: Prisma.Decimal }
+import {
+	availableStock,
+	countPortions,
+	inventoryTransaction,
+	refreshAutoStops
+} from '../inventory/availability'
 
 @Injectable()
 export class KitchenService {
@@ -82,7 +85,7 @@ export class KitchenService {
 			throw new BadRequestException('Количество должно быть больше нуля')
 		}
 
-		return this.prisma.$transaction(async tx => {
+		return inventoryTransaction(this.prisma, async (tx) => {
 			// Условное обновление: остаток не уйдёт в минус даже при одновременных списаниях
 			const updated = await tx.batch.updateMany({
 				where: { id: dto.batchId, count: { gte: count } },
@@ -110,7 +113,7 @@ export class KitchenService {
 			})
 			if (managers.length) {
 				await tx.message.createMany({
-					data: managers.map(manager => ({
+					data: managers.map((manager) => ({
 						type: MessageType.WRITE_OFF,
 						idRecipient: manager.id,
 						idStockMovement: movement.id
@@ -118,52 +121,73 @@ export class KitchenService {
 				})
 			}
 
-			await this.recalcAutoStops(tx, batch.idProduct)
+			await refreshAutoStops(tx, {
+				ingredients: { some: { idProduct: batch.idProduct } }
+			})
 
 			return movement
 		})
 	}
 
 	async getStopList() {
-		const [dishes, stock] = await Promise.all([
-			this.prisma.dish.findMany({
-				orderBy: { name: 'asc' },
-				select: {
-					id: true,
-					name: true,
-					ingredients: {
-						select: {
-							idProduct: true,
-							count: true,
-							product: { select: { nameProduct: true } }
+		return this.prisma.$transaction(
+			async (tx) => {
+				const dishes = await tx.dish.findMany({
+					where: { deletedAt: null },
+					orderBy: { name: 'asc' },
+					select: {
+						id: true,
+						name: true,
+						ingredients: {
+							select: {
+								idProduct: true,
+								count: true,
+								product: { select: { nameProduct: true } }
+							}
+						},
+						stopLists: {
+							where: { type: StopType.MANUAL },
+							select: { type: true, creater: { select: { name: true } } }
 						}
-					},
-					stopLists: {
-						select: { type: true, creater: { select: { name: true } } }
 					}
-				}
-			}),
-			this.getAvailableStock(this.prisma)
-		])
-
-		return dishes
-			.map(dish => ({
-				id: dish.id,
-				name: dish.name,
-				portions: this.countPortions(dish.ingredients, stock),
-				missing: dish.ingredients
-					.filter(i => (stock.get(i.idProduct) ?? new Prisma.Decimal(0)).lt(i.count))
-					.map(i => i.product.nameProduct),
-				stops: dish.stopLists.map(stop => ({
-					type: stop.type,
-					createrName: stop.creater?.name ?? null
-				}))
-			}))
-			.sort((a, b) => Number(b.stops.length > 0) - Number(a.stops.length > 0))
+				})
+				const stock = await availableStock(tx)
+				return dishes
+					.map((dish) => {
+						const portions = countPortions(dish.ingredients, stock)
+						return {
+							id: dish.id,
+							name: dish.name,
+							portions,
+							missing: dish.ingredients
+								.filter((item) =>
+									(stock.get(item.idProduct) ?? new Prisma.Decimal(0)).lt(
+										item.count
+									)
+								)
+								.map((item) => item.product.nameProduct),
+							stops: [
+								...dish.stopLists.map((stop) => ({
+									type: stop.type,
+									createrName: stop.creater?.name ?? null
+								})),
+								...(portions === 0
+									? [{ type: StopType.AUTO, createrName: null }]
+									: [])
+							]
+						}
+					})
+					.sort(
+						(a, b) => Number(b.stops.length > 0) - Number(a.stops.length > 0)
+					)
+			},
+			{ isolationLevel: 'RepeatableRead' }
+		)
 	}
-
 	async setManualStop(dishId: string, userId: string) {
-		const dish = await this.prisma.dish.findUnique({ where: { id: dishId } })
+		const dish = await this.prisma.dish.findUnique({
+			where: { id: dishId, deletedAt: null }
+		})
 		if (!dish) throw new NotFoundException('Блюдо не найдено')
 
 		return this.prisma.stopList.upsert({
@@ -179,55 +203,5 @@ export class KitchenService {
 			where: { idDish: dishId, type: StopType.MANUAL }
 		})
 		return true
-	}
-
-	// Годный остаток по продуктам: только непросроченные партии
-	private async getAvailableStock(db: Tx | PrismaService) {
-		const rows = await db.batch.groupBy({
-			by: ['idProduct'],
-			where: { EXP: { gt: new Date() }, count: { gt: 0 } },
-			_sum: { count: true }
-		})
-		return new Map(
-			rows.map(row => [row.idProduct, row._sum.count ?? new Prisma.Decimal(0)])
-		)
-	}
-
-	private countPortions(
-		ingredients: Ingredient[],
-		stock: Map<string, Prisma.Decimal>
-	) {
-		if (!ingredients.length) return null
-
-		return Math.min(
-			...ingredients.map(i =>
-				(stock.get(i.idProduct) ?? new Prisma.Decimal(0))
-					.div(i.count)
-					.floor()
-					.toNumber()
-			)
-		)
-	}
-
-	private async recalcAutoStops(tx: Tx, productId: string) {
-		const dishes = await tx.dish.findMany({
-			where: { ingredients: { some: { idProduct: productId } } },
-			select: { id: true, ingredients: { select: { idProduct: true, count: true } } }
-		})
-		const stock = await this.getAvailableStock(tx)
-
-		for (const dish of dishes) {
-			if (this.countPortions(dish.ingredients, stock) === 0) {
-				await tx.stopList.upsert({
-					where: { idDish_type: { idDish: dish.id, type: StopType.AUTO } },
-					create: { idDish: dish.id, type: StopType.AUTO },
-					update: {}
-				})
-			} else {
-				await tx.stopList.deleteMany({
-					where: { idDish: dish.id, type: StopType.AUTO }
-				})
-			}
-		}
 	}
 }
