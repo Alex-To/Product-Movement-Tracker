@@ -1,62 +1,69 @@
 @import 'tailwindcss';
 
-:root {
-	--brand: #1e7bff;
-	--accent: #0f67e8;
-	--accent-hover: #0b56c4;
-	--on-accent: #ffffff;
-	--tint: #dcebff;
-	--surface: #f7faff;
-	--surface-raised: #ffffff;
-	--border: #d3e0f2;
-	--border-strong: #7a8aa3;
-	--ink: #10223f;
-	--ink-muted: #56637a;
-	--fire: #f26300;
-	--fire-tint: #ffe9d6;
-	--fire-ink: #9a3f00;
-	--stop-tint: #e8edf5;
-	--stop-ink: #3e4c63;
-	--stop-border: #c3cddc;
-	--danger: #c53030;
-	--danger-tint: #fde8e7;
+/* Тёмная тема включается атрибутом data-theme на <html> (кнопка в шапке) */
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
 
-	--shadow-card: 0 1px 2px rgba(16, 34, 63, 0.06);
-	--shadow-popover: 0 8px 24px rgba(16, 34, 63, 0.14);
+/* Брендбук «ДуДоС пицца»: графит, золото, крем, сливочный */
+:root {
+	--brand: #bf9558;
+	--accent: #1f2b33;
+	--accent-hover: #2e3e49;
+	--on-accent: #f5f2ec;
+	--tint: #efebe3;
+	--surface: #f5f2ec;
+	--surface-raised: #ffffff;
+	--border: #e4ded3;
+	--border-strong: #d9d2c5;
+	--ink: #1f2b33;
+	--ink-muted: #5b6368;
+	--gold: #bf9558;
+	--gold-ink: #8a6531;
+	--fire: #bf9558;
+	--fire-tint: #f4ebc3;
+	--fire-ink: #6b4e22;
+	--stop-tint: #efebe3;
+	--stop-ink: #5b6368;
+	--stop-border: #c9c1b2;
+	--danger: #8e2f25;
+	--danger-tint: #f3ded8;
+	--backdrop: rgba(31, 43, 51, 0.55);
+
+	--shadow-card: 0 1px 2px rgba(31, 43, 51, 0.06);
+	--shadow-popover: 0 1px 2px rgba(31, 43, 51, 0.06), 0 24px 48px -24px rgba(31, 43, 51, 0.25);
 
 	color-scheme: light;
 }
 
-@media (prefers-color-scheme: dark) {
-	:root {
-		--accent: #5b9dff;
-		--accent-hover: #7cb1ff;
-		--on-accent: #04122b;
-		--tint: #16294a;
-		--surface: #0b1424;
-		--surface-raised: #131f33;
-		--border: #24344f;
-		--border-strong: #63748f;
-		--ink: #e6eefb;
-		--ink-muted: #9aa8bf;
-		--fire: #ff8a3d;
-		--fire-tint: #3a2210;
-		--fire-ink: #ffb37a;
-		--stop-tint: #222c3b;
-		--stop-ink: #b8c3d6;
-		--stop-border: #36435a;
-		--danger: #ff7b72;
-		--danger-tint: #3a1715;
+:root[data-theme='dark'] {
+	--accent: #f5f2ec;
+	--accent-hover: #ffffff;
+	--on-accent: #1f2b33;
+	--tint: #2a3842;
+	--surface: #151d22;
+	--surface-raised: #1f2b33;
+	--border: #33424c;
+	--border-strong: #43535e;
+	--ink: #f5f2ec;
+	--ink-muted: #a9b1b6;
+	--gold-ink: #d9b57e;
+	--fire-tint: #3a3322;
+	--fire-ink: #e7cf9e;
+	--stop-tint: #2a3842;
+	--stop-ink: #a9b1b6;
+	--stop-border: #43535e;
+	--danger: #f2a799;
+	--danger-tint: #4a2a25;
+	--backdrop: rgba(0, 0, 0, 0.6);
 
-		--shadow-card: none;
-		--shadow-popover: 0 8px 24px rgba(0, 0, 0, 0.5);
+	--shadow-card: 0 1px 2px rgba(0, 0, 0, 0.35);
+	--shadow-popover: 0 24px 48px -20px rgba(0, 0, 0, 0.6);
 
-		color-scheme: dark;
-	}
+	color-scheme: dark;
 }
 
 @theme inline {
-	--font-display: 'Unbounded', 'Arial Black', system-ui, sans-serif;
+	--font-display: 'Arial Black', 'Arial Bold', Gadget, sans-serif;
+	--font-accent: Georgia, 'Times New Roman', serif;
 	--font-sans: 'Onest', 'Segoe UI', system-ui, sans-serif;
 	--font-mono: 'JetBrains Mono', ui-monospace, Consolas, monospace;
 
@@ -71,6 +78,8 @@
 	--color-border-strong: var(--border-strong);
 	--color-ink: var(--ink);
 	--color-ink-muted: var(--ink-muted);
+	--color-gold: var(--gold);
+	--color-gold-ink: var(--gold-ink);
 	--color-fire: var(--fire);
 	--color-fire-tint: var(--fire-tint);
 	--color-fire-ink: var(--fire-ink);
@@ -79,13 +88,15 @@
 	--color-stop-border: var(--stop-border);
 	--color-danger: var(--danger);
 	--color-danger-tint: var(--danger-tint);
+	--color-backdrop: var(--backdrop);
 
 	--color-primary: var(--accent);
 	--color-secondary: var(--fire);
 
-	--radius-sm: 6px;
-	--radius-md: 10px;
-	--radius-lg: 16px;
+	/* Поля — 16, карточки — 28, кнопки — таблетки (rounded-full) */
+	--radius-sm: 10px;
+	--radius-md: 16px;
+	--radius-lg: 28px;
 
 	--shadow-card: var(--shadow-card);
 	--shadow-popover: var(--shadow-popover);
@@ -118,23 +129,38 @@ select {
 	font: inherit;
 }
 
+/* Arial Black — одно начертание, поэтому вес не синтезируем */
 h1 {
 	@apply font-display text-ink;
-	font-size: 32px;
-	line-height: 40px;
-	font-weight: 700;
+	font-size: 44px;
+	line-height: 1.05;
+	font-weight: 400;
+	letter-spacing: -0.5px;
 }
 
 h2 {
 	@apply font-display text-ink;
-	font-size: 22px;
-	line-height: 30px;
-	font-weight: 600;
+	font-size: 24px;
+	line-height: 1.2;
+	font-weight: 400;
+}
+
+/* Акцентное слово в заголовке: «Склад и сроки годности» */
+.title-accent {
+	font-family: var(--font-accent);
+	font-style: italic;
+	font-weight: 400;
+	letter-spacing: 0;
+	color: var(--gold-ink);
 }
 
 @media (max-width: 639px) {
 	h1 {
-		font-size: 26px;
-		line-height: 34px;
+		font-size: 30px;
+		line-height: 1.1;
+	}
+
+	h2 {
+		font-size: 21px;
 	}
 }

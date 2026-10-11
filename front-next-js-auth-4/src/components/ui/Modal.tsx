@@ -2,7 +2,7 @@
 
 import { AnimatePresence, m } from 'framer-motion'
 import { type MouseEvent, type ReactNode } from 'react'
-import { twMerge } from 'tailwind-merge'
+import { twMerge } from '@/utils/tw-merge'
 
 interface Props {
 	isOpen: boolean
@@ -22,7 +22,7 @@ export function Modal({ isOpen, onClose, children, className }: Props) {
 		<AnimatePresence>
 			{isOpen && (
 				<m.div
-					className="fixed inset-0 z-50 flex items-center justify-center bg-[#04122b]/55"
+					className="fixed inset-0 z-50 flex items-center justify-center bg-backdrop"
 					initial={{ opacity: 0 }}
 					animate={{ opacity: 1 }}
 					exit={{ opacity: 0 }}

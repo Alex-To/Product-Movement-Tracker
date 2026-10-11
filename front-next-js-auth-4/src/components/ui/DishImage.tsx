@@ -1,6 +1,6 @@
 import { BACKEND_URL } from '@/constants'
 import { TbToolsKitchen2 } from 'react-icons/tb'
-import { twMerge } from 'tailwind-merge'
+import { twMerge } from '@/utils/tw-merge'
 
 interface Props {
 	// Путь от бэкенда: /uploads/dishes/<файл>

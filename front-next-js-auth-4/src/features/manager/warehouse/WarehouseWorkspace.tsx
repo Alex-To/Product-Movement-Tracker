@@ -35,7 +35,9 @@ function Workspace({ userId }: { userId: string }) {
 		<>
 			<div className="mb-6 flex flex-wrap items-start justify-between gap-4">
 				<div>
-					<h1>Склад и сроки годности</h1>
+					<h1>
+						Склад и <span className="title-accent">сроки годности</span>
+					</h1>
 					<p className="mt-3 text-ink-muted">
 						Остатки по продуктам и партиям. Обновление каждые 15 секунд.
 					</p>

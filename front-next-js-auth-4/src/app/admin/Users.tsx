@@ -11,7 +11,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useEffect, useRef, useState } from 'react'
 import toast from 'react-hot-toast'
 import { TbPencil, TbPlus, TbTrash } from 'react-icons/tb'
-import { twMerge } from 'tailwind-merge'
+import { twMerge } from '@/utils/tw-merge'
 import { UserForm } from './UserForm'
 import { USERS_QUERY_KEY, useDeleteUser } from './useUserMutations'
 
@@ -122,7 +122,7 @@ export function Users() {
 										<td className={twMerge(cellClass, 'font-semibold whitespace-nowrap')}>
 											{user.name}
 											{user.id === currentUser.id && (
-												<span className="ml-2 text-caption font-normal text-ink-muted">
+												<span className="ml-2 rounded-full bg-fire-tint px-2.5 py-0.5 text-label font-semibold text-fire-ink">
 													это вы
 												</span>
 											)}

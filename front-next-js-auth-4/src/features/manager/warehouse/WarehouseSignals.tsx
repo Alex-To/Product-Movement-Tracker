@@ -19,7 +19,7 @@ function BatchSignal({ batch }: { batch: WarehouseBatch }) {
 			</p>
 			<Link
 				href={`${MANAGER_ROUTES.DELIVERIES}/${batch.delivery.id}`}
-				className="mt-1 inline-block break-words text-caption text-accent underline"
+				className="mt-1 inline-block break-words text-caption font-semibold text-gold-ink underline"
 			>
 				Накладная № {batch.delivery.number}
 			</Link>
@@ -31,7 +31,7 @@ export function WarehouseSignals({ data }: { data: Signals }) {
 		<div className="mb-7 grid items-start gap-4 lg:grid-cols-3">
 			<section
 				aria-label="Истекают в ближайшие 24 часа"
-				className="min-w-0 rounded-lg border border-fire bg-fire-tint p-5"
+				className="min-w-0 rounded-lg border-2 border-fire bg-fire-tint p-6"
 			>
 				<h2 className="!text-title text-fire-ink">
 					Истекают в ближайшие 24 ч · {data.expiring.total}
@@ -52,7 +52,7 @@ export function WarehouseSignals({ data }: { data: Signals }) {
 			</section>
 			<section
 				aria-label="Просроченные партии"
-				className="min-w-0 rounded-lg border border-danger bg-danger-tint p-5"
+				className="min-w-0 rounded-lg border-2 border-danger/40 bg-danger-tint p-6"
 			>
 				<h2 className="!text-title text-danger">
 					Просрочено · {data.expired.total}
@@ -75,7 +75,7 @@ export function WarehouseSignals({ data }: { data: Signals }) {
 			</section>
 			<section
 				aria-label="Блюда в стоп-листе"
-				className="min-w-0 rounded-lg border border-border bg-surface-raised p-5"
+				className="min-w-0 rounded-lg bg-surface-raised p-6 shadow-card"
 			>
 				<h2 className="!text-title">
 					Блюда в стоп-листе · {data.stopped.total}
@@ -88,7 +88,7 @@ export function WarehouseSignals({ data }: { data: Signals }) {
 						>
 							<Link
 								href={`${MANAGER_ROUTES.DISHES}/${dish.id}`}
-								className="break-words font-semibold text-accent underline"
+								className="break-words font-semibold text-gold-ink underline"
 							>
 								{dish.name}
 							</Link>

@@ -1,7 +1,7 @@
 'use client'
 
 import { MiniLoader } from '@/components/ui/MiniLoader'
-import { twMerge } from 'tailwind-merge'
+import { twMerge } from '@/utils/tw-merge'
 import styles from './AuthForm.module.css'
 import { useAuthForm } from './useAuthForm'
 
@@ -52,10 +52,6 @@ export function AuthForm() {
 					{isLoading ? <MiniLoader /> : 'Войти'}
 				</button>
 			</div>
-
-			<p className="mt-4 text-caption text-ink-muted">
-				Регистрации нет: сотрудников заводит администратор.
-			</p>
 		</form>
 	)
 }

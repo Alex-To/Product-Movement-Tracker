@@ -1,5 +1,5 @@
 import { type ButtonHTMLAttributes } from 'react'
-import { twMerge } from 'tailwind-merge'
+import { twMerge } from '@/utils/tw-merge'
 
 interface Props extends ButtonHTMLAttributes<HTMLButtonElement> {
 	variant?: 'primary' | 'secondary' | 'ghost'
@@ -14,8 +14,8 @@ const VARIANTS = {
 }
 
 const SIZES = {
-	sm: 'min-h-9 px-3 text-caption',
-	md: 'min-h-11 px-4 text-body'
+	sm: 'min-h-9 px-4 text-caption',
+	md: 'min-h-11 px-5 text-body'
 }
 
 export function Button({
@@ -29,7 +29,7 @@ export function Button({
 		<button
 			type={type}
 			className={twMerge(
-				'inline-flex items-center justify-center gap-2 rounded-md border border-transparent font-semibold whitespace-nowrap transition-colors cursor-pointer',
+				'inline-flex items-center justify-center gap-2 rounded-full border border-transparent font-semibold whitespace-nowrap transition-colors cursor-pointer',
 				'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent',
 				'disabled:cursor-not-allowed disabled:border-transparent disabled:bg-stop-tint disabled:text-ink-muted',
 				VARIANTS[variant],

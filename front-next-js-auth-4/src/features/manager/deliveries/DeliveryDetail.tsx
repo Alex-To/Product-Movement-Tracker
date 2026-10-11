@@ -16,7 +16,7 @@ function Receipt({ id, userId }: { id: string; userId: string }) {
 	})
 	return (
 		<>
-			<Link className="text-accent underline" href={MANAGER_ROUTES.DELIVERIES}>
+			<Link className="inline-flex min-h-10 items-center rounded-full bg-surface-raised px-4 font-semibold text-ink shadow-card hover:bg-tint" href={MANAGER_ROUTES.DELIVERIES}>
 				← Поставки
 			</Link>
 			{query.isPending ? (
@@ -30,7 +30,7 @@ function Receipt({ id, userId }: { id: string; userId: string }) {
 				</div>
 			) : (
 				<section className="mt-6 rounded-lg border border-border bg-surface-raised p-5 sm:p-8">
-					<p className="mb-3 font-semibold text-accent">Поставка проведена</p>
+					<p className="mb-3 inline-flex rounded-full bg-fire-tint px-4 py-1 text-caption font-bold text-fire-ink">Поставка проведена</p>
 					<h1 className="break-words">Накладная № {query.data.number}</h1>
 					<dl className="my-6 grid gap-4 sm:grid-cols-3">
 						<div>

@@ -74,7 +74,7 @@ export function ProductBatches({
 									<tr>
 										<td
 											colSpan={4}
-											className={`px-3 py-2 font-semibold ${batch.expired ? 'bg-danger-tint text-danger' : 'bg-tint text-accent'}`}
+											className={`px-3 py-2 font-semibold ${batch.expired ? 'bg-danger-tint text-danger' : 'bg-surface text-fire-ink'}`}
 										>
 											{batch.expired
 												? 'Просроченные'
@@ -85,7 +85,7 @@ export function ProductBatches({
 								<tr className="border-b border-border">
 									<td className="p-3">
 										<Link
-											className="font-semibold text-accent underline"
+											className="font-semibold text-gold-ink underline"
 											href={`${MANAGER_ROUTES.DELIVERIES}/${batch.delivery.id}`}
 										>
 											№ {batch.delivery.number}

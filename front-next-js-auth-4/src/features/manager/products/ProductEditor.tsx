@@ -46,7 +46,7 @@ export function ProductEditor({ product, units, userId, onDone }: { product: Man
 	const unitLocked = !!product && !product.canChangeUnit
 	return (
 		<aside id="product-editor" className="rounded-lg border border-border bg-surface-raised p-5 shadow-card sm:p-6 lg:sticky lg:top-6">
-			<div className="mb-5 flex items-center gap-2"><span className="flex size-9 items-center justify-center rounded-md bg-tint text-accent"><TbPlus size={21} aria-hidden /></span><h2 className="!text-title">{product ? 'Изменить продукт' : 'Новый продукт'}</h2></div>
+			<div className="mb-5 flex items-center gap-2"><span className="flex size-10 items-center justify-center rounded-md bg-fire-tint text-fire-ink"><TbPlus size={21} aria-hidden /></span><h2 className="!text-title">{product ? 'Изменить продукт' : 'Новый продукт'}</h2></div>
 			<form onSubmit={submit} className="space-y-5">
 				<div><label className={catalogLabel} htmlFor="manager-product-name">Название продукта</label><input id="manager-product-name" className={catalogInput} value={name} onChange={e => setName(e.target.value)} placeholder="Например, сливки 33%" maxLength={150} required disabled={save.isPending} />
 					{!!duplicate.data?.matches && <p role="status" className="mt-2 rounded-sm bg-tint p-3 text-caption text-ink"><b>Такое название уже есть.</b> Можно сохранить ещё один продукт. Проверьте, что он действительно нужен.</p>}

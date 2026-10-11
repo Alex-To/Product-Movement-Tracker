@@ -13,31 +13,37 @@ export function WriteOffHistory() {
 	const writeOffs = data?.data ?? []
 
 	return (
-		<section>
-			<h2 className="mb-3">Мои последние списания</h2>
-			{isLoading && <p>Загрузка…</p>}
-			{!isLoading && !writeOffs.length && <p>Списаний пока нет</p>}
+		<section className="flex max-w-3xl flex-col gap-3">
+			<h2>Мои последние списания</h2>
+			{isLoading && <p className="text-ink-muted">Загрузка…</p>}
+			{!isLoading && !writeOffs.length && (
+				<p className="text-ink-muted">Списаний пока нет</p>
+			)}
 			{!!writeOffs.length && (
-				<div className="overflow-x-auto">
-					<table className="w-full text-left">
-						<thead>
+				<div className="overflow-x-auto rounded-lg bg-surface-raised shadow-card">
+					<table className="w-full min-w-[480px] border-collapse text-left">
+						<thead className="text-caption font-semibold text-ink-muted">
 							<tr>
-								<th className="p-2">Время</th>
-								<th className="p-2">Продукт</th>
-								<th className="p-2">Партия</th>
-								<th className="p-2">Кол-во</th>
+								<th className="px-6 pt-5 pb-3">Время</th>
+								<th className="px-4 pt-5 pb-3">Продукт</th>
+								<th className="px-4 pt-5 pb-3">Партия</th>
+								<th className="px-6 pt-5 pb-3 text-right">Кол-во</th>
 							</tr>
 						</thead>
 						<tbody>
 							{writeOffs.map(w => (
 								<tr
 									key={w.id}
-									className="border-t border-zinc-700"
+									className="border-t border-tint"
 								>
-									<td className="p-2">{formatDateTime(w.createDate)}</td>
-									<td className="p-2">{w.batch.product.nameProduct}</td>
-									<td className="p-2">{w.batch.delivery.number}</td>
-									<td className="p-2">
+									<td className="px-6 py-3 text-ink-muted">
+										{formatDateTime(w.createDate)}
+									</td>
+									<td className="px-4 py-3 font-semibold">
+										{w.batch.product.nameProduct}
+									</td>
+									<td className="px-4 py-3">{w.batch.delivery.number}</td>
+									<td className="px-6 py-3 text-right font-mono">
 										{formatAmount(w.count, w.batch.product.unit.name)}
 									</td>
 								</tr>

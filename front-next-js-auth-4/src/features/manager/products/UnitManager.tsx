@@ -3,7 +3,7 @@
 import { Button } from '@/components/ui/Button'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState, type FormEvent } from 'react'
-import { TbPlus, TbRulerMeasure, TbX } from 'react-icons/tb'
+import { TbPlus, TbScale, TbX } from 'react-icons/tb'
 import toast from 'react-hot-toast'
 import { managerApi, managerError } from '../api/manager.api'
 import { managerKeys } from '../api/manager.keys'
@@ -41,7 +41,7 @@ export function UnitManager({ units, onCreated }: { units: ManagerUnit[]; onCrea
 	const deleting = units.find(unit => unit.id === deleteId)
 	return (
 		<details className="mt-6 border-t border-border pt-5" open={units.length === 0 ? true : undefined}>
-			<summary className="flex cursor-pointer items-center gap-2 text-caption font-semibold text-accent"><TbRulerMeasure size={19} aria-hidden /> Единицы измерения <span className="ml-auto text-ink-muted">{units.length}</span></summary>
+			<summary className="flex cursor-pointer items-center gap-2 text-caption font-bold text-fire-ink"><TbScale size={19} aria-hidden /> Единицы измерения <span className="ml-auto text-ink-muted">{units.length}</span></summary>
 			<p className="mt-3 text-caption text-ink-muted">Например: кг, л, шт. Добавьте нужную единицу и выберите её для продукта.</p>
 			<div className="my-3 flex flex-wrap gap-2">
 				{units.map(unit => <span key={unit.id} className="inline-flex items-center gap-1 rounded-sm border border-border bg-surface px-2 py-1 text-caption">

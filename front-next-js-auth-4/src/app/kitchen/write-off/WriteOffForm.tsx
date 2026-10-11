@@ -1,10 +1,12 @@
 'use client'
 
 import { errorCatch } from '@/api/api.helper'
+import { Button } from '@/components/ui/Button'
 import kitchenService from '@/services/kitchen.service'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { type FormEvent, useState } from 'react'
 import toast from 'react-hot-toast'
+import { twMerge } from '@/utils/tw-merge'
 import { formatAmount, formatDateTime, isExpired } from '../format'
 
 export function WriteOffForm() {
@@ -63,88 +65,105 @@ export function WriteOffForm() {
 	return (
 		<form
 			onSubmit={onSubmit}
-			className="flex flex-col gap-4"
+			className="flex flex-col gap-6"
 		>
-			<h1>Ручное списание</h1>
+			<h1>
+				Ручное <span className="title-accent">списание</span>
+			</h1>
 
-			<label className="flex flex-col gap-1 max-w-sm">
-				1. Продукт
-				<select
-					id="write-off-product"
-					value={productId}
-					onChange={e => onProductChange(e.target.value)}
-					className="border border-zinc-600 rounded p-2 bg-transparent"
-					disabled={isLoading}
-				>
-					<option value="">— выберите продукт —</option>
-					{products.map(p => (
-						<option
-							key={p.id}
-							value={p.id}
-							disabled={!p.batches.length}
-						>
-							{p.nameProduct} ({p.unit.name})
-							{!p.batches.length && ' — нет на складе'}
-						</option>
-					))}
-				</select>
-			</label>
+			<div className="flex max-w-3xl flex-col gap-6 rounded-lg bg-surface-raised p-5 shadow-card sm:p-8">
+				<label className="flex max-w-md flex-col gap-2 font-semibold">
+					<span>
+						<span className="text-gold-ink">1.</span> Продукт
+					</span>
+					<select
+						id="write-off-product"
+						value={productId}
+						onChange={e => onProductChange(e.target.value)}
+						className="min-h-13 rounded-md bg-tint px-4 font-normal text-ink"
+						disabled={isLoading}
+					>
+						<option value="">— выберите продукт —</option>
+						{products.map(p => (
+							<option
+								key={p.id}
+								value={p.id}
+								disabled={!p.batches.length}
+							>
+								{p.nameProduct} ({p.unit.name})
+								{!p.batches.length && ' — нет на складе'}
+							</option>
+						))}
+					</select>
+				</label>
 
-			{product && (
-				<fieldset className="flex flex-col gap-2">
-					<legend className="mb-2">2. Партия (сначала с ранним сроком)</legend>
-					{product.batches.map(b => (
-						<label
-							key={b.id}
-							className="flex items-center gap-3 border border-zinc-700 rounded p-2"
-						>
-							<input
-								type="radio"
-								name="write-off-batch"
-								value={b.id}
-								checked={batchId === b.id}
-								onChange={() => setBatchId(b.id)}
-							/>
+				{product && (
+					<fieldset className="flex flex-col gap-2">
+						<legend className="mb-2 font-semibold">
+							<span className="text-gold-ink">2.</span> Партия (сначала с ранним сроком)
+						</legend>
+						{product.batches.map(b => (
+							<label
+								key={b.id}
+								className={twMerge(
+									'flex min-h-14 cursor-pointer items-center gap-3 rounded-md border-2 bg-surface px-4 py-3',
+									batchId === b.id ? 'border-accent' : 'border-transparent'
+								)}
+							>
+								<input
+									type="radio"
+									name="write-off-batch"
+									value={b.id}
+									checked={batchId === b.id}
+									onChange={() => setBatchId(b.id)}
+									className="size-5 shrink-0 accent-gold"
+								/>
+								<span>
+									<b>{b.delivery.number}</b> · остаток{' '}
+									{formatAmount(b.count, product.unit.name)} · годен до{' '}
+									{formatDateTime(b.EXP)}
+									{isExpired(b.EXP) && (
+										<b className="text-danger"> · просрочено</b>
+									)}
+								</span>
+							</label>
+						))}
+					</fieldset>
+				)}
+
+				{batch && (
+					<div className="flex flex-wrap items-end gap-3">
+						<label className="flex flex-col gap-2 font-semibold">
 							<span>
-								{b.delivery.number} · остаток {formatAmount(b.count, product.unit.name)} · годен
-								до {formatDateTime(b.EXP)}
-								{isExpired(b.EXP) && <b> · просрочено</b>}
+								<span className="text-gold-ink">3.</span> Количество, {product?.unit.name}
 							</span>
+							<input
+								id="write-off-count"
+								type="text"
+								inputMode="decimal"
+								value={count}
+								onChange={e => setCount(e.target.value)}
+								className="min-h-13 w-40 rounded-md bg-tint px-4 font-normal text-ink placeholder:text-ink-muted"
+								placeholder="0,5"
+							/>
 						</label>
-					))}
-				</fieldset>
-			)}
-
-			{batch && (
-				<div className="flex flex-wrap items-end gap-3">
-					<label className="flex flex-col gap-1">
-						3. Количество, {product?.unit.name}
-						<input
-							id="write-off-count"
-							type="text"
-							inputMode="decimal"
-							value={count}
-							onChange={e => setCount(e.target.value)}
-							className="border border-zinc-600 rounded p-2 bg-transparent w-40"
-							placeholder="0,5"
-						/>
-					</label>
-					<button
-						type="button"
-						onClick={() => setCount(batch.count)}
-						className="border border-zinc-600 rounded px-3 py-2"
-					>
-						Весь остаток партии
-					</button>
-					<button
-						type="submit"
-						disabled={isPending}
-						className="bg-primary rounded px-4 py-2"
-					>
-						{isPending ? 'Списываем…' : 'Списать'}
-					</button>
-				</div>
-			)}
+						<Button
+							variant="secondary"
+							className="min-h-13"
+							onClick={() => setCount(batch.count)}
+						>
+							Весь остаток партии
+						</Button>
+						<Button
+							type="submit"
+							className="min-h-13 px-8"
+							disabled={isPending}
+						>
+							{isPending ? 'Списываем…' : 'Списать'}
+						</Button>
+					</div>
+				)}
+			</div>
 		</form>
 	)
 }

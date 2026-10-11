@@ -34,7 +34,7 @@ export function ManagerAccess({
 						: 'Войдите под учётной записью менеджера. Текущая роль не имеет доступа к этому разделу.'}
 				</p>
 				<div className="flex flex-wrap gap-4">
-					<Link className="text-accent underline" href={PUBLIC_PAGES.LOGIN}>
+					<Link className="font-semibold text-gold-ink underline" href={PUBLIC_PAGES.LOGIN}>
 						Перейти ко входу
 					</Link>
 					<Button variant="ghost" onClick={() => session.refetch()}>

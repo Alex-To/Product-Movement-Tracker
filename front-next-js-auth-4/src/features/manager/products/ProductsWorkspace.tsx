@@ -86,7 +86,7 @@ export function ProductsWorkspace() {
 	if (!allowed) {
 		const unauthorized = axios.isAxiosError(session.error) && session.error.response?.status === 401
 		return <section className="mx-auto max-w-lg rounded-lg border border-border bg-surface-raised p-8 shadow-card">
-			<TbPackage className="mb-4 text-accent" size={32} aria-hidden />
+			<TbPackage className="mb-4 text-gold" size={32} aria-hidden />
 			<h1 className="!text-2xl">{session.data ? 'Доступ только для менеджера' : unauthorized ? 'Войдите как менеджер' : 'Не удалось открыть справочник'}</h1>
 			<p className="mt-3 text-ink-muted">{session.data ? 'У текущей учётной записи другая роль. Продукты доступны только сотруднику с ролью «Менеджер».' : managerError(session.error)}</p>
 			<div className="mt-6 flex flex-wrap items-center gap-3">
@@ -101,8 +101,7 @@ export function ProductsWorkspace() {
 	return (
 		<>
 			<div className="mb-7 flex flex-wrap items-start justify-between gap-4">
-				<div><div className="mb-2 text-caption font-semibold uppercase tracking-wider text-accent">Справочник склада</div><h1>Продукты</h1><p className="mt-2 max-w-xl text-ink-muted">Остатки поступают со склада.</p></div>
-				<div className="flex items-center gap-3"><span className="text-caption text-ink-muted">{session.data?.name}</span></div>
+				<div><div className="mb-3 text-caption font-bold tracking-[0.1em] uppercase text-gold-ink">Справочник склада</div><h1>Продукты</h1><p className="mt-2 max-w-xl text-ink-muted">Остатки поступают со склада.</p></div>
 			</div>
 			<div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
 				<section aria-label="Список продуктов" className="min-w-0">
@@ -115,7 +114,7 @@ export function ProductsWorkspace() {
 						<div className="flex items-center justify-between border-b border-border px-5 py-3 text-caption"><b>Каталог {data && <span className="ml-2 rounded-sm bg-tint px-2 py-0.5 text-accent">{data.total}</span>}</b><span role="status" className="text-ink-muted">{products.isFetching ? 'Обновляем…' : 'Годный остаток'}</span></div>
 						{products.isPending ? <div role="status" className="px-5 py-12 text-center text-ink-muted">Загрузка продуктов…</div>
 							: products.isError ? <div role="alert" className="p-6"><p className="text-danger">{managerError(products.error)}</p><Button variant="secondary" className="mt-3" onClick={() => products.refetch()}>Повторить</Button></div>
-								: !data?.items.length ? <div className="px-6 py-14 text-center"><TbPackage className="mx-auto mb-4 text-accent" size={40} aria-hidden /><h2 className="!text-title">{search || unitId ? 'Ничего не найдено' : page > 1 ? 'На этой странице нет продуктов' : 'Добавьте первый продукт'}</h2><p className="mx-auto mt-2 max-w-sm text-caption text-ink-muted">{search || unitId ? 'Измените запрос или сбросьте фильтры.' : 'Создайте единицу измерения и продукт в форме рядом. Количество появится после поставки.'}</p>{(search || unitId || page > 1) && <Button variant="ghost" className="mt-3" onClick={() => { setSearchDraft(''); changeFilters({ search: '', unitId: '', page: '' }) }}>Показать все продукты</Button>}</div>
+								: !data?.items.length ? <div className="px-6 py-14 text-center"><TbPackage className="mx-auto mb-4 text-gold" size={40} aria-hidden /><h2 className="!text-title">{search || unitId ? 'Ничего не найдено' : page > 1 ? 'На этой странице нет продуктов' : 'Добавьте первый продукт'}</h2><p className="mx-auto mt-2 max-w-sm text-caption text-ink-muted">{search || unitId ? 'Измените запрос или сбросьте фильтры.' : 'Создайте единицу измерения и продукт в форме рядом. Количество появится после поставки.'}</p>{(search || unitId || page > 1) && <Button variant="ghost" className="mt-3" onClick={() => { setSearchDraft(''); changeFilters({ search: '', unitId: '', page: '' }) }}>Показать все продукты</Button>}</div>
 									: <div className="relative overflow-x-auto"><table className="w-full min-w-[570px] text-left text-caption"><thead className="border-b border-border bg-surface text-ink-muted"><tr><th className="px-5 py-3">Продукт</th><th className="px-3 py-3">Ед.</th><th className="px-3 py-3 text-right">Остаток</th><th className="px-3 py-3 text-right">В блюдах</th><th className="px-4 py-3"><span className="sr-only">Действия</span></th></tr></thead>
 										<tbody>{data.items.map(product => <tr key={product.id} className={`border-b border-border last:border-0 ${selected?.id === product.id ? 'bg-tint' : 'hover:bg-surface'}`}><td className="px-5 py-4"><span className="break-words font-semibold text-ink">{product.name}</span>{product.batchesCount > 0 && <span className="mt-1 block text-ink-muted">Партий: {product.batchesCount}</span>}</td><td className="px-3 py-4 text-ink-muted">{product.unit.name}</td><td className="px-3 py-4 text-right font-mono tabular-nums">{formatQuantity(product.availableQuantity)}</td><td className="px-3 py-4 text-right text-ink-muted">{product.dishesCount || '—'}</td><td className="px-4 py-3"><div className="flex justify-end gap-1">
 											<Button variant="ghost" size="sm" aria-label={`Изменить ${product.name}`} title="Изменить продукт" onClick={() => { setSelected(product); setEditorRevision(n => n + 1); document.getElementById('product-editor')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }) }}><TbPencil size={19} aria-hidden /></Button>

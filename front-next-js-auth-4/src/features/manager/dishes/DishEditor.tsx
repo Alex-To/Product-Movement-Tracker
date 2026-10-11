@@ -215,7 +215,7 @@ function Editor({
 						/>
 					</div>
 					<Link
-						className="inline-flex rounded-md border border-border-strong px-4 py-3 text-accent"
+						className="inline-flex min-h-11 items-center rounded-full border border-border-strong px-5 font-semibold text-ink hover:bg-tint"
 						target="_blank"
 						rel="noopener noreferrer"
 						href={MANAGER_ROUTES.PRODUCTS}

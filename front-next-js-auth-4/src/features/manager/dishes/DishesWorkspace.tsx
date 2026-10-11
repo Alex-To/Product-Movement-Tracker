@@ -72,7 +72,9 @@ function Workspace({
 		<DishesUserContext.Provider value={userId}>
 			<div className="mb-6 flex flex-wrap items-start justify-between gap-4">
 				<div>
-					<h1>Блюда и рецептуры</h1>
+					<h1>
+						Блюда и <span className="title-accent">рецептуры</span>
+					</h1>
 				</div>
 				<Link
 					className="rounded-md bg-accent px-4 py-3 font-semibold text-on-accent"

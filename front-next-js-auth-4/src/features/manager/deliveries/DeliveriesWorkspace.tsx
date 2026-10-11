@@ -163,7 +163,7 @@ function Workspace({ userId }: { userId: string }) {
 	return (
 		<>
 			<div className="mb-7">
-				<p className="mb-2 font-semibold text-accent">Приём на склад</p>
+				<p className="mb-3 text-caption font-bold tracking-[0.1em] uppercase text-gold-ink">Приём на склад</p>
 				<h1>Поставки</h1>
 				<p className="mt-3 text-ink-muted">
 					Одна накладная — несколько продуктов и партий. Остатки обновятся после
@@ -174,7 +174,9 @@ function Workspace({ userId }: { userId: string }) {
 				className="rounded-lg border border-border bg-surface-raised p-5 sm:p-7"
 				aria-label="Приём поставки"
 			>
-				<h2>Новая поставка</h2>
+				<h2>
+					Новая <span className="title-accent">поставка</span>
+				</h2>
 				<form onSubmit={submit} className="mt-5 space-y-5">
 					<fieldset
 						disabled={locked || review}
@@ -247,7 +249,7 @@ function Workspace({ userId }: { userId: string }) {
 							href={MANAGER_ROUTES.PRODUCTS}
 							target="_blank"
 							rel="noopener noreferrer"
-							className="inline-flex min-h-11 items-center rounded-md border border-border-strong px-4 py-2 font-semibold text-accent hover:bg-tint"
+							className="inline-flex min-h-11 items-center rounded-full border border-border-strong px-5 py-2 font-semibold text-ink hover:bg-tint"
 						>
 							Нет продукта в системе? Добавить продукт ↗
 						</Link>
@@ -255,7 +257,7 @@ function Workspace({ userId }: { userId: string }) {
 							Добавьте продукт и вернитесь сюда — форма поставки сохранится.
 						</p>
 						<details className="rounded-md border border-border p-4">
-							<summary className="cursor-pointer font-semibold text-accent">
+							<summary className="cursor-pointer font-bold text-fire-ink">
 								Добавить поставщика
 							</summary>
 							<label
@@ -344,7 +346,7 @@ function Workspace({ userId }: { userId: string }) {
 										<p className="mt-3 text-ink-muted">
 											Продукты не найдены.{' '}
 											<Link
-												className="text-accent underline"
+												className="font-semibold text-gold-ink underline"
 												href={MANAGER_ROUTES.PRODUCTS}
 											>
 												Открыть справочник

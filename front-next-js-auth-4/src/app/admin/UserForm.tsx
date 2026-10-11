@@ -87,7 +87,7 @@ export function UserForm({ user, onClose }: Props) {
 			noValidate
 		>
 			<h2>
-				{isEdit ? 'Изменить сотрудника' : 'Новый сотрудник'}
+				{isEdit ? 'Изменить' : 'Новый'} <span className="title-accent">сотрудник{isEdit ? 'а' : ''}</span>
 			</h2>
 
 			<div>

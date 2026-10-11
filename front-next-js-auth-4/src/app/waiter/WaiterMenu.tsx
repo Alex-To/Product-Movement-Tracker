@@ -109,10 +109,10 @@ export function WaiterMenu() {
 	)
 
 	return (
-		<div className="grid gap-6 pb-20 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start lg:pb-0">
+		<div className="grid gap-8 pb-28 lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start lg:pb-0">
 			<section className="min-w-0">
 				<h1>Меню</h1>
-				<p className="mt-1 mb-6 text-caption text-ink-muted">
+				<p className="mt-2 mb-6 text-ink-muted">
 					Порции обновляются автоматически.
 				</p>
 
@@ -127,7 +127,7 @@ export function WaiterMenu() {
 						<TbSearch
 							size={20}
 							aria-hidden
-							className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-ink-muted"
+							className="pointer-events-none absolute top-1/2 left-5 -translate-y-1/2 text-ink-muted"
 						/>
 						<input
 							id="menu-search"
@@ -136,7 +136,7 @@ export function WaiterMenu() {
 							onChange={e => setSearch(e.target.value)}
 							placeholder="Поиск блюда"
 							autoComplete="off"
-							className="min-h-11 w-full rounded-md border border-border-strong bg-surface-raised pr-3 pl-10 text-ink placeholder:text-ink-muted focus:outline-2 focus:outline-offset-2 focus:outline-accent"
+							className="min-h-13 w-full rounded-full border border-border bg-surface-raised pr-5 pl-13 text-ink placeholder:text-ink-muted focus:outline-2 focus:outline-offset-2 focus:outline-accent"
 						/>
 					</div>
 				)}
@@ -193,13 +193,14 @@ export function WaiterMenu() {
 			</aside>
 
 			{totalPortions > 0 && (
-				<div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-surface-raised px-4 py-3 shadow-popover lg:hidden">
-					<div className="mx-auto flex max-w-7xl items-center justify-between gap-3">
-						<span className="font-semibold">
+				// Плавающая золотая панель чека на телефоне и вертикальном планшете
+				<div className="fixed inset-x-3 bottom-4 z-20 sm:inset-x-6 sm:bottom-6 lg:hidden">
+					<div className="mx-auto flex min-h-16 max-w-3xl items-center justify-between gap-3 rounded-full bg-gold py-2 pr-2 pl-6 text-[#1f2b33] shadow-popover">
+						<span className="text-[16px] font-bold">
 							В чеке: {formatPortions(totalPortions)}
 						</span>
 						<Button
-							size="sm"
+							className="min-h-12 bg-[#1f2b33] px-6 text-[#f5f2ec] hover:bg-[#2e3e49]"
 							onClick={() =>
 								document
 									.getElementById('check')
