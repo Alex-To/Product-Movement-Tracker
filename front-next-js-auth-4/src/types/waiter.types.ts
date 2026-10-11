@@ -3,8 +3,17 @@ export type TStopType = 'AUTO' | 'MANUAL'
 export interface IMenuDish {
 	id: string
 	name: string
+	// Фото ставит менеджер; путь от бэкенда или null
+	image: string | null
 	portions: number
 	hasRecipe: boolean
+	// Количества — строки Decimal: на порцию и годный остаток продукта
+	ingredients: {
+		productId: string
+		name: string
+		perPortion: string
+		available: string
+	}[]
 	stops: TStopType[]
 	missing: string[]
 	expiring: { productName: string; expiresAt: string } | null
@@ -15,6 +24,8 @@ export interface IMenuDish {
 export interface IOrderItemData {
 	dishId: string
 	count: number
+	// Продукты, которые гость попросил убрать из блюда
+	excludedProductIds?: string[]
 }
 
 export interface IOrderData {

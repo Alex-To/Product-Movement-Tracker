@@ -1,6 +1,4 @@
 class PublicPages {
-	HOME = '/'
-
 	AUTH = '/auth'
 	LOGIN = `${this.AUTH}/login`
 }

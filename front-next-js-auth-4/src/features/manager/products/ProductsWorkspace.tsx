@@ -12,7 +12,7 @@ import Link from 'next/link'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { useCallback, useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
-import { TbArrowLeft, TbArrowRight, TbPackage, TbPencil, TbPlus, TbSearch, TbTrash } from 'react-icons/tb'
+import { TbArrowLeft, TbArrowRight, TbPackage, TbPencil, TbSearch, TbTrash } from 'react-icons/tb'
 import { managerApi, managerError } from '../api/manager.api'
 import { managerKeys } from '../api/manager.keys'
 import type { ManagerProduct } from '../api/manager.types'
@@ -101,8 +101,8 @@ export function ProductsWorkspace() {
 	return (
 		<>
 			<div className="mb-7 flex flex-wrap items-start justify-between gap-4">
-				<div><div className="mb-2 text-caption font-semibold uppercase tracking-wider text-accent">Справочник склада</div><h1>Продукты</h1><p className="mt-2 max-w-xl text-ink-muted">Продукты и единицы для поставок и рецептов. Остатки поступают со склада.</p></div>
-				<div className="flex items-center gap-3"><span className="text-caption text-ink-muted">{session.data?.name}</span><Button variant="secondary" onClick={() => { resetEditor(); document.getElementById('product-editor')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }) }}><TbPlus size={20} aria-hidden /> Новый продукт</Button></div>
+				<div><div className="mb-2 text-caption font-semibold uppercase tracking-wider text-accent">Справочник склада</div><h1>Продукты</h1><p className="mt-2 max-w-xl text-ink-muted">Остатки поступают со склада.</p></div>
+				<div className="flex items-center gap-3"><span className="text-caption text-ink-muted">{session.data?.name}</span></div>
 			</div>
 			<div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
 				<section aria-label="Список продуктов" className="min-w-0">
@@ -123,7 +123,7 @@ export function ProductsWorkspace() {
 										</div></td></tr>)}</tbody></table></div>}
 						{data && (pages > 1 || page > 1) && <div className="flex items-center justify-between border-t border-border px-4 py-3 text-caption"><span>Страница {page} из {pages}</span><div className="flex gap-2"><Button size="sm" variant="secondary" aria-label="Предыдущая страница" disabled={page <= 1} onClick={() => changeFilters({ page: String(page - 1) })}><TbArrowLeft aria-hidden /></Button><Button size="sm" variant="secondary" aria-label="Следующая страница" disabled={page >= pages} onClick={() => changeFilters({ page: String(page + 1) })}><TbArrowRight aria-hidden /></Button></div></div>}
 					</div>
-					<p className="mt-3 text-caption text-ink-muted">Удалить можно только продукт без партий и использования в рецептах.</p>
+					<p className="mt-3 text-caption text-ink-muted">Удалить можно только продукт без партий.</p>
 				</section>
 				<ProductEditor key={`${selected?.id ?? 'new'}-${editorRevision}`} product={selected} units={units.data ?? []} userId={userId} onDone={resetEditor} />
 			</div>

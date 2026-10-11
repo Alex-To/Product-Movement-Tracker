@@ -56,6 +56,7 @@ model Product {
 
   batches         Batch[]
   dishIngredients DishIngredient[]
+  orderExclusions OrderItemExclusion[]
 
   @@map("products")
 }
@@ -131,7 +132,22 @@ model OrderItem {
   idDish String @map("id_dish")
   dish   Dish   @relation(fields: [idDish], references: [id])
 
+  // Продукты, которые гость попросил убрать: со склада они не списываются
+  exclusions OrderItemExclusion[]
+
   @@map("order_item")
+}
+
+model OrderItemExclusion {
+  idOrderItem String    @map("id_order_item")
+  orderItem   OrderItem @relation(fields: [idOrderItem], references: [id], onDelete: Cascade)
+
+  // Удалить из справочника можно только неиспользуемый продукт — старые пометки «без» уходят вместе с ним
+  idProduct String  @map("id_product")
+  product   Product @relation(fields: [idProduct], references: [id], onDelete: Cascade)
+
+  @@id([idOrderItem, idProduct])
+  @@map("order_item_exclusions")
 }
 
 model Dish {
@@ -139,6 +155,8 @@ model Dish {
   name String
   version Int @default(1)
   deletedAt DateTime? @map("deleted_at")
+  // Путь к фото блюда от корня бэкенда: /uploads/dishes/<файл>
+  image String?
 
   ingredients DishIngredient[]
   orderItems  OrderItem[]

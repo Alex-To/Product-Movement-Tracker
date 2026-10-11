@@ -19,11 +19,12 @@ export type UserRole = (typeof UserRole)[keyof typeof UserRole]
 export interface ITokenInside {
 	id: string
 	role: UserRole
+	type: 'access' | 'refresh'
 	iat: number
 	exp: number
 }
 
-export type TProtectUserData = Omit<ITokenInside, 'iat' | 'exp'>
+export type TProtectUserData = Omit<ITokenInside, 'iat' | 'exp' | 'type'>
 
 export interface IFormData extends Pick<IUser, 'login'> {
 	password: string

@@ -188,11 +188,11 @@ export function UserForm({ user, onClose }: Props) {
 						))}
 					</select>
 				)}
-				<p className="mt-1.5 text-caption text-ink-muted">
-					{isAdminUser
-						? 'Роль администратора не меняется.'
-						: 'Роль ADMIN назначить нельзя: администратор в системе один, заводится сидом.'}
-				</p>
+				{isAdminUser && (
+					<p className="mt-1.5 text-caption text-ink-muted">
+						Роль администратора не меняется.
+					</p>
+				)}
 			</div>
 
 			{serverError && (

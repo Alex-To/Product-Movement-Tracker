@@ -5,6 +5,7 @@ import { Role, type User } from '@prisma/client'
 import { verify } from 'argon2'
 import { omit } from 'lodash'
 import { AuthDto } from './dto/auth.dto'
+import { ITokenPayload, TokenType } from './token.types'
 
 @Injectable()
 export class AuthService {
@@ -22,8 +23,11 @@ export class AuthService {
 	}
 
 	async getNewTokens(refreshToken: string) {
-		const result = await this.jwt.verifyAsync(refreshToken)
-		if (!result) {
+		// Истёкший или битый токен — 401, а не 500 из необработанной ошибки jwt
+		const result = await this.jwt
+			.verifyAsync<ITokenPayload>(refreshToken)
+			.catch(() => null)
+		if (!result || result.type !== TokenType.REFRESH) {
 			throw new UnauthorizedException('Invalid refresh token')
 		}
 		const user = await this.userService.getById(result.id)
@@ -39,11 +43,12 @@ export class AuthService {
 	}
 
 	private async issueTokens(userId: string, role: Role) {
-		const payload = { id: userId, role }
-		const accessToken = this.jwt.sign(payload, {
+		const accessPayload: ITokenPayload = { id: userId, role, type: TokenType.ACCESS }
+		const refreshPayload: ITokenPayload = { id: userId, role, type: TokenType.REFRESH }
+		const accessToken = this.jwt.sign(accessPayload, {
 			expiresIn: this.TOKEN_EXPIRATION_ACCESS
 		})
-		const refreshToken = this.jwt.sign(payload, {
+		const refreshToken = this.jwt.sign(refreshPayload, {
 			expiresIn: this.TOKEN_EXPIRATION_REFRESH
 		})
 		return { accessToken, refreshToken }

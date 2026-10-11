@@ -13,13 +13,15 @@ import {
 	refreshAutoStops
 } from '../inventory/availability'
 
+const ORDER_NUMBER_CYCLE = 99
+
 @Injectable()
 export class KitchenService {
 	constructor(private prisma: PrismaService) {}
 
 	async getOrders() {
-		return this.prisma.order.findMany({
-			orderBy: { createDate: 'desc' },
+		const orders = await this.prisma.order.findMany({
+			orderBy: [{ createDate: 'desc' }, { id: 'desc' }],
 			take: 50,
 			select: {
 				id: true,
@@ -29,11 +31,34 @@ export class KitchenService {
 					select: {
 						id: true,
 						count: true,
-						dish: { select: { id: true, name: true } }
+						dish: { select: { id: true, name: true } },
+						// Что гость попросил убрать — повар готовит без этого
+						exclusions: {
+							select: { product: { select: { id: true, nameProduct: true } } },
+							orderBy: { product: { nameProduct: 'asc' } }
+						}
 					}
 				}
 			}
 		})
+		if (!orders.length) return []
+
+		// Номер для кухни — порядковый номер заказа по кругу 1…99.
+		// Считаем, сколько заказов было раньше самого старого из показанных
+		const oldest = orders[orders.length - 1]
+		const before = await this.prisma.order.count({
+			where: {
+				OR: [
+					{ createDate: { lt: oldest.createDate } },
+					{ createDate: oldest.createDate, id: { lt: oldest.id } }
+				]
+			}
+		})
+
+		return orders.map((order, index) => ({
+			...order,
+			number: ((before + orders.length - 1 - index) % ORDER_NUMBER_CYCLE) + 1
+		}))
 	}
 	async getProducts() {
 		return this.prisma.product.findMany({

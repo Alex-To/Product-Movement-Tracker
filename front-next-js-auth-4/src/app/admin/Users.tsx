@@ -63,8 +63,7 @@ export function Users() {
 					<div>
 						<h1>Сотрудники</h1>
 						<p className="mt-1 text-caption text-ink-muted">
-							Каждый видит только экраны своей роли
-							{data && ` · всего ${data.length}`}
+							{data && `всего ${data.length}`}
 						</p>
 					</div>
 					<Button onClick={() => setPanel('new')}>

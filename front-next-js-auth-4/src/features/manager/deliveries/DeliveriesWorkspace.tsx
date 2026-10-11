@@ -252,8 +252,7 @@ function Workspace({ userId }: { userId: string }) {
 							Нет продукта в системе? Добавить продукт ↗
 						</Link>
 						<p className="text-caption text-ink-muted">
-							Справочник откроется в новой вкладке. Добавьте продукт и вернитесь
-							сюда — форма поставки сохранится.
+							Добавьте продукт и вернитесь сюда — форма поставки сохранится.
 						</p>
 						<details className="rounded-md border border-border p-4">
 							<summary className="cursor-pointer font-semibold text-accent">
@@ -443,9 +442,8 @@ function Workspace({ userId }: { userId: string }) {
 							))}
 						</div>
 						<p className="text-caption text-ink-muted">
-							До 100 строк. Для разных сроков годности добавьте продукт
-							повторно. Дата и время вводятся в часовом поясе устройства;
-							просроченные позиции принять нельзя.
+							Для разных сроков годности добавьте продукт повторно.
+							Просроченные позиции принять нельзя.
 						</p>
 					</fieldset>
 					{error && (

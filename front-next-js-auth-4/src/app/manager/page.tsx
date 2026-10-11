@@ -1,10 +1,6 @@
-import { ManagerContent } from '@/app/manager/ManagerContent'
-import type { Metadata } from 'next'
-
-export const metadata: Metadata = {
-	title: 'Manager content'
-}
+import { MANAGER_ROUTES } from '@/features/manager/config/manager.routes'
+import { redirect } from 'next/navigation'
 
 export default function ManagerPage() {
-	return <ManagerContent />
+	redirect(MANAGER_ROUTES.WAREHOUSE)
 }

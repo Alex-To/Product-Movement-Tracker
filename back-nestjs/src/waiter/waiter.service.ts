@@ -20,6 +20,8 @@ type ProductNeed = {
 	dishes: { name: string; count: number }[]
 }
 
+type OrderLine = { dishId: string; count: number; excluded: string[] }
+
 const ZERO = new Prisma.Decimal(0)
 
 const HOT_LIMIT = 3
@@ -41,6 +43,7 @@ export class WaiterService {
 				select: {
 					id: true,
 					name: true,
+					image: true,
 					ingredients: {
 						select: {
 							idProduct: true,
@@ -76,9 +79,17 @@ export class WaiterService {
 			return {
 				id: dish.id,
 				name: dish.name,
+				image: dish.image,
 				portions: portions ?? 0,
 				hasRecipe: dish.ingredients.length > 0,
-				stops: [...dish.stopLists.map(stop => stop.type), ...(portions === 0 ? [StopType.AUTO] : [])],
+				// Фронту для проверки всего чека: у разных блюд бывают общие продукты
+				ingredients: dish.ingredients.map(i => ({
+					productId: i.idProduct,
+					name: i.product.nameProduct,
+					perPortion: i.count.toString(),
+					available: (stock.get(i.idProduct) ?? ZERO).toString()
+				})),
+				stops:[...dish.stopLists.map(stop => stop.type), ...(portions === 0 ? [StopType.AUTO] : [])],
 				missing: dish.ingredients
 					.filter(i => (stock.get(i.idProduct) ?? ZERO).lt(i.count))
 					.map(i => i.product.nameProduct),
@@ -119,11 +130,17 @@ export class WaiterService {
 	}
 
 	async createOrder(userId: string, dto: CreateOrderDto) {
-		const counts = new Map<string, number>()
+		// Одно блюдо может быть в чеке несколькими строками: обычное и «без лука».
+		// Одинаковые строки (блюдо + тот же набор «без») складываем
+		const lines = new Map<string, OrderLine>()
 		for (const item of dto.items) {
-			counts.set(item.dishId, (counts.get(item.dishId) ?? 0) + item.count)
+			const excluded = [...new Set(item.excludedProductIds ?? [])].sort()
+			const key = `${item.dishId}|${excluded.join(',')}`
+			const line = lines.get(key)
+			if (line) line.count += item.count
+			else lines.set(key, { dishId: item.dishId, count: item.count, excluded })
 		}
-		const dishIds = [...counts.keys()]
+		const dishIds = [...new Set([...lines.values()].map(line => line.dishId))]
 
 		return inventoryTransaction(this.prisma, async tx => {
 			const now = new Date()
@@ -156,6 +173,22 @@ export class WaiterService {
 				)
 			}
 
+			const dishById = new Map(dishes.map(dish => [dish.id, dish]))
+			for (const line of lines.values()) {
+				const dish = dishById.get(line.dishId)!
+				const recipe = new Set(dish.ingredients.map(i => i.idProduct))
+				if (line.excluded.some(id => !recipe.has(id))) {
+					throw new BadRequestException(
+						`Состав блюда «${dish.name}» изменился — обновите меню`
+					)
+				}
+				if (line.excluded.length >= recipe.size) {
+					throw new BadRequestException(
+						`Нельзя убрать из блюда «${dish.name}» все продукты`
+					)
+				}
+			}
+
 			const productIds = [
 				...new Set(dishes.flatMap(d => d.ingredients.map(i => i.idProduct)))
 			]
@@ -182,18 +215,26 @@ export class WaiterService {
 				})
 			}
 
+			// Убранные гостем продукты не нужны и со склада не списываются
 			const need = new Map<string, ProductNeed>()
-			for (const dish of dishes) {
-				const portions = counts.get(dish.id)!
+			for (const line of lines.values()) {
+				const dish = dishById.get(line.dishId)!
+				const name = line.excluded.length
+					? `${dish.name} (без: ${dish.ingredients
+							.filter(i => line.excluded.includes(i.idProduct))
+							.map(i => i.product.nameProduct)
+							.join(', ')})`
+					: dish.name
 				for (const ingredient of dish.ingredients) {
+					if (line.excluded.includes(ingredient.idProduct)) continue
 					const entry = need.get(ingredient.idProduct) ?? {
 						amount: ZERO,
 						productName: ingredient.product.nameProduct,
 						unit: ingredient.product.unit.name,
 						dishes: []
 					}
-					entry.amount = entry.amount.plus(ingredient.count.mul(portions))
-					entry.dishes.push({ name: dish.name, count: portions })
+					entry.amount = entry.amount.plus(ingredient.count.mul(line.count))
+					entry.dishes.push({ name, count: line.count })
 					need.set(ingredient.idProduct, entry)
 				}
 			}
@@ -223,9 +264,12 @@ export class WaiterService {
 				data: {
 					createrId: userId,
 					items: {
-						create: dishIds.map(dishId => ({
-							idDish: dishId,
-							count: counts.get(dishId)!
+						create: [...lines.values()].map(line => ({
+							idDish: line.dishId,
+							count: line.count,
+							exclusions: {
+								create: line.excluded.map(idProduct => ({ idProduct }))
+							}
 						}))
 					}
 				},

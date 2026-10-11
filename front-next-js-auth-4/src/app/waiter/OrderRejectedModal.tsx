@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
 import type { IOrderRejection } from '@/types/waiter.types'
 import { formatAmount, formatPortions } from './format'
-import type { TCart } from './useCart'
+import { dishCounts, type TCart } from './useCart'
 
 interface Props {
 	rejection: IOrderRejection | null
@@ -16,9 +16,11 @@ interface Props {
 const cellClass = 'px-3 py-2 align-top'
 
 export function OrderRejectedModal({ rejection, cart, onClose, onLimit }: Props) {
+	// Порции блюда по всем строкам чека, включая «без …»
+	const counts = dishCounts(cart)
 	const limited =
 		rejection?.available.filter(
-			item => cart[item.dishId] !== undefined && item.portions < cart[item.dishId]
+			item => counts[item.dishId] !== undefined && item.portions < counts[item.dishId]
 		) ?? []
 
 	return (

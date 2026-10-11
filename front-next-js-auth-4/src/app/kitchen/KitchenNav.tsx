@@ -3,7 +3,7 @@
 import { KITCHEN_PAGES } from '@/config/pages/kitchen.config'
 import { PUBLIC_PAGES } from '@/config/pages/public.config'
 import authService from '@/services/auth/auth.service'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { twMerge } from 'tailwind-merge'
@@ -17,11 +17,16 @@ const links = [
 export function KitchenNav() {
 	const pathname = usePathname()
 	const router = useRouter()
+	const queryClient = useQueryClient()
 
 	const { mutate: logout, isPending } = useMutation({
 		mutationKey: ['logout'],
 		mutationFn: () => authService.logout(),
-		onSuccess: () => router.push(PUBLIC_PAGES.LOGIN)
+		onSuccess() {
+			// Чтобы следующий сотрудник не увидел данные предыдущего
+			queryClient.clear()
+			router.push(PUBLIC_PAGES.LOGIN)
+		}
 	})
 
 	return (

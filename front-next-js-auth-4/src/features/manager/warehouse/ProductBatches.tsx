@@ -64,7 +64,6 @@ export function ProductBatches({
 							<th className="p-3">Остаток</th>
 							<th className="p-3">Годен до</th>
 							<th className="p-3">Осталось</th>
-							<th className="p-3">Порядок FEFO</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -74,11 +73,11 @@ export function ProductBatches({
 									batch.expired !== data.items[index - 1].expired) && (
 									<tr>
 										<td
-											colSpan={5}
+											colSpan={4}
 											className={`px-3 py-2 font-semibold ${batch.expired ? 'bg-danger-tint text-danger' : 'bg-tint text-accent'}`}
 										>
 											{batch.expired
-												? 'Просроченные — не участвуют в FEFO'
+												? 'Просроченные'
 												: 'Годные партии — по ближайшему сроку'}
 										</td>
 									</tr>
@@ -106,9 +105,6 @@ export function ProductBatches({
 									<td className="p-3">{warehouseDate(batch.expiresAt)}</td>
 									<td className={`p-3 ${batch.expired ? 'text-danger' : ''}`}>
 										{remainingTime(batch)}
-									</td>
-									<td className="p-3">
-										{batch.fefoRank ? `${batch.fefoRank}-я` : 'Не участвует'}
 									</td>
 								</tr>
 							</Fragment>

@@ -1,10 +1,10 @@
 'use client'
 
+import { errorCatch } from '@/api/api.helper'
 import { getRoleHomePage } from '@/config/pages/role.config'
 import authService from '@/services/auth/auth.service'
 import { IFormData } from '@/types/auth.types'
 import { useMutation } from '@tanstack/react-query'
-import axios from 'axios'
 import { useRouter } from 'next/navigation'
 import { useTransition } from 'react'
 import { SubmitHandler, useForm } from 'react-hook-form'
@@ -26,9 +26,7 @@ export function useAuthForm() {
 			})
 		},
 		onError(error) {
-			if (axios.isAxiosError(error)) {
-				toast.error(error.response?.data?.message)
-			}
+			toast.error(errorCatch(error))
 		}
 	})
 

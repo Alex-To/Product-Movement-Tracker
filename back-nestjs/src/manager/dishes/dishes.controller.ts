@@ -1,15 +1,20 @@
 import {
 	Body,
 	Controller,
+	Delete,
 	Get,
 	Param,
 	Patch,
 	Post,
 	Query,
+	UploadedFile,
+	UseInterceptors,
 	UsePipes,
 	ValidationPipe
 } from '@nestjs/common'
+import { FileInterceptor } from '@nestjs/platform-express'
 import { Role } from '@prisma/client'
+import { DISH_IMAGE_MAX_BYTES, type UploadedImage } from './dish-image.storage'
 import { Auth } from '../../auth/decorators/auth.decorator'
 import {
 	DishesQueryDto,
@@ -60,5 +65,17 @@ export class ManagerDishesController {
 		@Body() dto: DishVersionDto
 	) {
 		return this.service.restore(id, dto.version)
+	}
+	// Фото не меняет version: открытая форма рецепта не получит ложный конфликт
+	@Post(':id/image')
+	@Auth(Role.MANAGER)
+	@UseInterceptors(
+		FileInterceptor('image', { limits: { fileSize: DISH_IMAGE_MAX_BYTES } })
+	)
+	uploadImage(@Param('id') id: string, @UploadedFile() file?: UploadedImage) {
+		return this.service.setImage(id, file)
+	}
+	@Delete(':id/image') @Auth(Role.MANAGER) removeImage(@Param('id') id: string) {
+		return this.service.removeImage(id)
 	}
 }

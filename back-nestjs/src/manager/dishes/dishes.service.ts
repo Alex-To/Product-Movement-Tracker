@@ -12,6 +12,12 @@ import {
 	refreshAutoStops
 } from '../../inventory/availability'
 import { PrismaService } from '../../prisma.service'
+import {
+	detectImageExtension,
+	removeDishImage,
+	saveDishImage,
+	type UploadedImage
+} from './dish-image.storage'
 import { DishesQueryDto, DishInputDto, DishUpdateDto } from './dishes.dto'
 
 const select = {
@@ -19,6 +25,7 @@ const select = {
 	name: true,
 	version: true,
 	deletedAt: true,
+	image: true,
 	ingredients: {
 		orderBy: { id: 'asc' as const },
 		select: {
@@ -148,6 +155,33 @@ export class ManagerDishesService {
 			return this.saved(tx, id)
 		})
 	}
+	async setImage(id: string, file?: UploadedImage) {
+		if (!file?.buffer?.length)
+			throw new BadRequestException('Выберите файл с фото блюда')
+		const ext = detectImageExtension(file.buffer)
+		if (!ext)
+			throw new BadRequestException('Фото должно быть в формате JPEG, PNG или WebP')
+		const dish = await this.activeDish(id)
+		const image = await saveDishImage(id, file.buffer, ext)
+		await this.prisma.dish.update({ where: { id }, data: { image } })
+		await removeDishImage(dish.image)
+		return this.get(id)
+	}
+	async removeImage(id: string) {
+		const dish = await this.activeDish(id)
+		await this.prisma.dish.update({ where: { id }, data: { image: null } })
+		await removeDishImage(dish.image)
+		return this.get(id)
+	}
+	private async activeDish(id: string) {
+		const dish = await this.prisma.dish.findFirst({
+			where: { id, deletedAt: null },
+			select: { image: true }
+		})
+		if (!dish)
+			throw new NotFoundException('Блюдо не найдено или лежит в корзине')
+		return dish
+	}
 	private async advance(
 		tx: Prisma.TransactionClient,
 		id: string,
@@ -216,6 +250,7 @@ export class ManagerDishesService {
 			name: dish.name,
 			version: dish.version,
 			deletedAt: dish.deletedAt,
+			image: dish.image,
 			portions,
 			autoStop: !dish.deletedAt && portions === 0,
 			manualStop: dish.stopLists.some((stop) => stop.type === 'MANUAL'),

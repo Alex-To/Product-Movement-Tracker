@@ -1,8 +1,11 @@
 import { Type } from 'class-transformer'
 import {
+	ArrayMaxSize,
 	ArrayMinSize,
+	ArrayUnique,
 	IsArray,
 	IsInt,
+	IsOptional,
 	IsString,
 	Max,
 	Min,
@@ -17,6 +20,14 @@ export class OrderItemDto {
 	@Min(1, { message: 'Количество порций — от 1' })
 	@Max(999)
 	count: number
+
+	// Продукты состава, которые гость попросил убрать
+	@IsOptional()
+	@IsArray()
+	@ArrayMaxSize(50)
+	@ArrayUnique({ message: 'Продукт указан дважды' })
+	@IsString({ each: true })
+	excludedProductIds?: string[]
 }
 
 export class CreateOrderDto {

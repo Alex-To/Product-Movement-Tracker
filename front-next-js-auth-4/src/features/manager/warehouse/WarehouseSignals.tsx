@@ -67,9 +67,6 @@ export function WarehouseSignals({ data }: { data: Signals }) {
 						Просроченных остатков нет.
 					</p>
 				)}
-				<p className="mt-3 text-caption text-ink-muted">
-					Просроченное не входит в годные остатки и порции.
-				</p>
 				{data.expired.total > data.limit && (
 					<p className="mt-3 text-caption">
 						Показаны первые {data.limit} партий.

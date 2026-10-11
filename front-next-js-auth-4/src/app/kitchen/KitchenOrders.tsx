@@ -33,7 +33,7 @@ export function KitchenOrders() {
 						className="border border-zinc-700 rounded p-3"
 					>
 						<div className="flex justify-between gap-2">
-							<b>№{order.id.slice(-5)}</b>
+							<b>№{order.number}</b>
 							<span className="text-sm text-zinc-400">
 								{formatDateTime(order.createDate)}
 							</span>
@@ -43,6 +43,14 @@ export function KitchenOrders() {
 							{order.items.map(item => (
 								<li key={item.id}>
 									{item.dish.name} × {item.count}
+									{item.exclusions.length > 0 && (
+										<span className="block text-sm font-semibold text-amber-400">
+											без:{' '}
+											{item.exclusions
+												.map(exclusion => exclusion.product.nameProduct)
+												.join(', ')}
+										</span>
+									)}
 								</li>
 							))}
 						</ul>

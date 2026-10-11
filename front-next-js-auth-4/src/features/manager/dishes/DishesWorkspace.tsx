@@ -73,9 +73,6 @@ function Workspace({
 			<div className="mb-6 flex flex-wrap items-start justify-between gap-4">
 				<div>
 					<h1>Блюда и рецептуры</h1>
-					<p className="mt-3 text-ink-muted">
-						Список блюд слева, рецепт и ингредиенты — справа.
-					</p>
 				</div>
 				<Link
 					className="rounded-md bg-accent px-4 py-3 font-semibold text-on-accent"
@@ -171,12 +168,11 @@ function Workspace({
 														<p className="mt-2 font-semibold">
 															Доступно порций: {dish.portions}
 														</p>
-														<p className="mt-2 text-caption text-ink-muted">
-															{dish.autoStop
-																? 'AUTO: не хватает ингредиентов'
-																: 'Ингредиентов достаточно'}
-															{dish.manualStop && ' · Ручной стоп кухни'}
-														</p>
+														{dish.manualStop && (
+															<p className="mt-2 text-caption text-ink-muted">
+																Ручной стоп кухни
+															</p>
+														)}
 													</>
 												)}
 											</Link>

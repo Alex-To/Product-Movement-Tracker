@@ -9,14 +9,10 @@ import { useProfile } from '@/hooks/useProfile'
 import authService from '@/services/auth/auth.service'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { TbLogout } from 'react-icons/tb'
-import { twMerge } from 'tailwind-merge'
-
-const links = [{ href: WAITER_PAGES.MENU, label: 'Меню' }]
 
 export function WaiterNav() {
-	const pathname = usePathname()
 	const router = useRouter()
 	const queryClient = useQueryClient()
 	const { user } = useProfile()
@@ -39,27 +35,6 @@ export function WaiterNav() {
 				>
 					<Logo />
 				</Link>
-
-				<nav className="order-last flex w-full gap-1 overflow-x-auto sm:order-none sm:w-auto">
-					{links.map(link => {
-						const isActive = pathname === link.href
-						return (
-							<Link
-								key={link.href}
-								href={link.href}
-								aria-current={isActive ? 'page' : undefined}
-								className={twMerge(
-									'rounded-md px-3 py-2 font-semibold whitespace-nowrap transition-colors',
-									isActive
-										? 'bg-tint text-accent'
-										: 'text-ink-muted hover:bg-tint hover:text-ink'
-								)}
-							>
-								{link.label}
-							</Link>
-						)
-					})}
-				</nav>
 
 				<div className="ml-auto flex items-center gap-3">
 					{user.login && (

@@ -13,6 +13,7 @@ import { useDishesUser } from './DishesContext'
 import { MANAGER_ROUTES } from '../config/manager.routes'
 import { catalogInput, catalogLabel } from '../products/styles'
 import { dishesApi, dishKeys, type ManagerDish } from './dishes.api'
+import { DishPhoto } from './DishPhoto'
 import { useUnsavedChanges } from './useUnsavedChanges'
 
 type Row = {
@@ -187,7 +188,9 @@ function Editor({
 			<p className="my-4 text-ink-muted">
 				Все количества — на одну порцию. Остатки не ограничивают создание
 				рецепта.
+				{!dish && ' Фото для меню можно добавить после сохранения блюда.'}
 			</p>
+			{dish && <DishPhoto dish={dish} />}
 			<form
 				onSubmit={submit}
 				className="space-y-5 rounded-lg border border-border bg-surface-raised p-5 sm:p-7"

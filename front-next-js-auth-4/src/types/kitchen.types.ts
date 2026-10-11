@@ -1,11 +1,15 @@
 export interface IKitchenOrder {
 	id: string
+	// Порядковый номер по кругу 1…99
+	number: number
 	createDate: string
 	creater: { name: string }
 	items: {
 		id: string
 		count: number
 		dish: { id: string; name: string }
+		// Гость попросил приготовить без этих продуктов
+		exclusions: { product: { id: string; nameProduct: string } }[]
 	}[]
 }
 

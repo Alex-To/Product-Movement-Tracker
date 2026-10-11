@@ -11,9 +11,10 @@ export async function jwtVerifyServer(accessToken: string) {
 			new TextEncoder().encode(`${process.env.JWT_SECRET}`)
 		)
 
-		if (!payload) return null
+		// Refresh-токен в cookie accessToken не считается входом
+		if (!payload || payload.type !== 'access') return null
 
-		return transformUserToState(payload)
+		return transformUserToState({ id: payload.id, role: payload.role })
 	} catch (error) {
 		if (
 			error instanceof Error &&

@@ -1,5 +1,6 @@
 import { PrismaClient, Role } from '@prisma/client'
 import { hash } from 'argon2'
+import { seedMenu } from './seed-menu'
 
 const prisma = new PrismaClient()
 
@@ -20,6 +21,8 @@ async function main() {
 			create: { ...employee, password }
 		})
 	}
+
+	await seedMenu(prisma)
 }
 
 main()

@@ -1,0 +1,3 @@
+BEGIN;
+ALTER TABLE "dishes" ADD COLUMN "image" TEXT;
+COMMIT;

@@ -56,10 +56,6 @@ export function StopList() {
 	return (
 		<section>
 			<h1 className="mb-2">Стоп-лист</h1>
-			<p className="text-sm text-zinc-400 mb-4">
-				Ручной стоп ставит и снимает кухня. Авто-стоп снимается сам, когда
-				продуктов снова хватает.
-			</p>
 
 			{isLoading && <p>Загрузка…</p>}
 			{isError && <p>Не удалось загрузить стоп-лист</p>}
