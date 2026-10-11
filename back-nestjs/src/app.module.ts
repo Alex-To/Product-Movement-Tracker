@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common'
 import { ConfigModule } from '@nestjs/config'
+import { AdminModule } from './admin/admin.module'
 import { AuthModule } from './auth/auth.module'
 import { KitchenModule } from './kitchen/kitchen.module'
 import { UserModule } from './user/user.module'
@@ -11,7 +12,8 @@ import { UserModule } from './user/user.module'
 		}),
 		AuthModule,
 		UserModule,
-		KitchenModule
+		KitchenModule,
+		AdminModule
 	]
 })
 export class AppModule {}

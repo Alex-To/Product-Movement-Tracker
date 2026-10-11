@@ -32,6 +32,7 @@ export function ProfileInfo() {
 		return (
 			<div className="mt-10">
 				<MiniLoader
+					isDark
 					width={150}
 					height={150}
 				/>
@@ -50,8 +51,8 @@ export function ProfileInfo() {
 				onClick={() => mutateLogout()}
 				disabled={isLogoutLoading}
 				className={twMerge(
-					'mt-2 bg-primary text-white px-4 py-2 rounded-md',
-					isLogoutLoading && 'bg-gray-500'
+					'mt-2 bg-accent text-on-accent font-semibold px-4 min-h-11 rounded-md',
+					isLogoutLoading && 'bg-stop-tint text-ink-muted'
 				)}
 			>
 				{isLogoutLoading ? <MiniLoader /> : 'Выйти'}

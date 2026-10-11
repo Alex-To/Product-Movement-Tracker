@@ -6,5 +6,9 @@ export const metadata: Metadata = {
 }
 
 export default function Page() {
-	return <ProfileInfo />
+	return (
+		<div className="p-8">
+			<ProfileInfo />
+		</div>
+	)
 }

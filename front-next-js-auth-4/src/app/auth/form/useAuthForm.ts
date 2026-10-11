@@ -1,6 +1,6 @@
 'use client'
 
-import { PUBLIC_PAGES } from '@/config/pages/public.config'
+import { getRoleHomePage } from '@/config/pages/role.config'
 import authService from '@/services/auth/auth.service'
 import { IFormData } from '@/types/auth.types'
 import { useMutation } from '@tanstack/react-query'
@@ -19,10 +19,10 @@ export function useAuthForm() {
 	const { mutate: mutateLogin, isPending: isLoginPending } = useMutation({
 		mutationKey: ['login'],
 		mutationFn: (data: IFormData) => authService.login(data),
-		onSuccess() {
+		onSuccess({ data }) {
 			startTransition(() => {
 				reset()
-				router.push(PUBLIC_PAGES.HOME)
+				router.push(getRoleHomePage(data.user.role))
 			})
 		},
 		onError(error) {

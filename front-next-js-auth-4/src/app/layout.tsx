@@ -1,12 +1,12 @@
+import '@fontsource/jetbrains-mono/500.css'
+import '@fontsource/onest/400.css'
+import '@fontsource/onest/500.css'
+import '@fontsource/onest/600.css'
+import '@fontsource/unbounded/600.css'
+import '@fontsource/unbounded/700.css'
 import type { Metadata } from 'next'
-import { JetBrains_Mono } from 'next/font/google'
 import './globals.css'
 import { Providers } from './Providers'
-
-const JetBrainsFont = JetBrains_Mono({
-	subsets: ['cyrillic', 'latin'],
-	weight: '400'
-})
 
 export const metadata: Metadata = {
 	title: 'Product Movement Tracker',
@@ -20,11 +20,9 @@ export default function RootLayout({
 }>) {
 	return (
 		<html lang="ru">
-			<body className={JetBrainsFont.className}>
+			<body>
 				<Providers>
-					<main className="flex min-h-screen flex-col items-center justify-between p-8">
-						{children}
-					</main>
+					<main className="min-h-screen">{children}</main>
 				</Providers>
 			</body>
 		</html>

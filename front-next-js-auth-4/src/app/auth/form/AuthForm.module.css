@@ -1,9 +1,9 @@
 @reference "../../globals.css";
 
 .input-field {
-	@apply w-full px-3 py-2 border border-zinc-700/60 rounded focus:outline-none focus:border-primary bg-transparent text-white transition-colors mt-1;
+	@apply mt-1.5 min-h-11 w-full rounded-sm border border-border-strong bg-surface-raised px-3 text-ink placeholder:text-ink-muted transition-colors focus:border-accent focus:outline-2 focus:outline-offset-0 focus:outline-accent/25;
 }
 
 .btn-primary {
-	@apply w-full py-2 text-white font-semibold rounded transition duration-500 ease-in-out mt-1 hover:scale-103;
+	@apply mt-1 inline-flex min-h-11 w-full items-center justify-center rounded-md font-semibold text-on-accent transition-colors hover:bg-accent-hover cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent;
 }

@@ -11,10 +11,10 @@ export function AuthForm() {
 	return (
 		<form
 			onSubmit={handleSubmit(onSubmit)}
-			className="max-w-sm mx-auto"
+			className="w-full"
 		>
 			<div className="mb-4">
-				<label className="text-gray-600">
+				<label className="text-caption font-semibold text-ink">
 					Логин
 					<input
 						type="text"
@@ -27,7 +27,7 @@ export function AuthForm() {
 			</div>
 
 			<div className="mb-6">
-				<label className="text-gray-600">
+				<label className="text-caption font-semibold text-ink">
 					Пароль
 					<input
 						type="password"
@@ -39,12 +39,12 @@ export function AuthForm() {
 				</label>
 			</div>
 
-			<div className="mb-3">
+			<div>
 				<button
 					type="submit"
 					className={twMerge(
 						styles['btn-primary'],
-						'bg-primary',
+						'bg-accent',
 						isLoading && 'opacity-75 cursor-not-allowed'
 					)}
 					disabled={isLoading}
@@ -52,6 +52,10 @@ export function AuthForm() {
 					{isLoading ? <MiniLoader /> : 'Войти'}
 				</button>
 			</div>
+
+			<p className="mt-4 text-caption text-ink-muted">
+				Регистрации нет: сотрудников заводит администратор.
+			</p>
 		</form>
 	)
 }

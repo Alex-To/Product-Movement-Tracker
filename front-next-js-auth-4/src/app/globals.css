@@ -1,32 +1,150 @@
 @import 'tailwindcss';
 
-@theme {
-	--color-primary: var(--color-emerald-600);
-	--color-secondary: var(--color-rose-500);
+/*
+ * Дизайн-система «Голубые»: интерфейс голубой и графитовый,
+ * единственный тёплый цвет fire значит «горит».
+ * Шрифты лежат в проекте (@fontsource, подключены в layout.tsx) —
+ * Google Fonts при сборке не нужен.
+ */
 
-	--default-transition-duration: 400ms;
+:root {
+	--brand: #1e7bff;
+	--accent: #0f67e8;
+	--accent-hover: #0b56c4;
+	--on-accent: #ffffff;
+	--tint: #dcebff;
+	--surface: #f7faff;
+	--surface-raised: #ffffff;
+	--border: #d3e0f2;
+	--border-strong: #7a8aa3;
+	--ink: #10223f;
+	--ink-muted: #56637a;
+	--fire: #f26300;
+	--fire-tint: #ffe9d6;
+	--fire-ink: #9a3f00;
+	--stop-tint: #e8edf5;
+	--stop-ink: #3e4c63;
+	--stop-border: #c3cddc;
+	--danger: #c53030;
+	--danger-tint: #fde8e7;
+
+	--shadow-card: 0 1px 2px rgba(16, 34, 63, 0.06);
+	--shadow-popover: 0 8px 24px rgba(16, 34, 63, 0.14);
+
+	color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root {
+		--accent: #5b9dff;
+		--accent-hover: #7cb1ff;
+		--on-accent: #04122b;
+		--tint: #16294a;
+		--surface: #0b1424;
+		--surface-raised: #131f33;
+		--border: #24344f;
+		--border-strong: #63748f;
+		--ink: #e6eefb;
+		--ink-muted: #9aa8bf;
+		--fire: #ff8a3d;
+		--fire-tint: #3a2210;
+		--fire-ink: #ffb37a;
+		--stop-tint: #222c3b;
+		--stop-ink: #b8c3d6;
+		--stop-border: #36435a;
+		--danger: #ff7b72;
+		--danger-tint: #3a1715;
+
+		--shadow-card: none;
+		--shadow-popover: 0 8px 24px rgba(0, 0, 0, 0.5);
+
+		color-scheme: dark;
+	}
+}
+
+@theme inline {
+	--font-display: 'Unbounded', 'Arial Black', system-ui, sans-serif;
+	--font-sans: 'Onest', 'Segoe UI', system-ui, sans-serif;
+	--font-mono: 'JetBrains Mono', ui-monospace, Consolas, monospace;
+
+	--color-brand: var(--brand);
+	--color-accent: var(--accent);
+	--color-accent-hover: var(--accent-hover);
+	--color-on-accent: var(--on-accent);
+	--color-tint: var(--tint);
+	--color-surface: var(--surface);
+	--color-surface-raised: var(--surface-raised);
+	--color-border: var(--border);
+	--color-border-strong: var(--border-strong);
+	--color-ink: var(--ink);
+	--color-ink-muted: var(--ink-muted);
+	--color-fire: var(--fire);
+	--color-fire-tint: var(--fire-tint);
+	--color-fire-ink: var(--fire-ink);
+	--color-stop-tint: var(--stop-tint);
+	--color-stop-ink: var(--stop-ink);
+	--color-stop-border: var(--stop-border);
+	--color-danger: var(--danger);
+	--color-danger-tint: var(--danger-tint);
+
+	/* Старые имена, которыми пользуются остальные страницы */
+	--color-primary: var(--accent);
+	--color-secondary: var(--fire);
+
+	--radius-sm: 6px;
+	--radius-md: 10px;
+	--radius-lg: 16px;
+
+	--shadow-card: var(--shadow-card);
+	--shadow-popover: var(--shadow-popover);
+
+	/* Типографика: caption 13/18, body 15/22, title 17/24 */
+	--text-caption: 13px;
+	--text-caption--line-height: 18px;
+	--text-label: 12px;
+	--text-label--line-height: 16px;
+	--text-body: 15px;
+	--text-body--line-height: 22px;
+	--text-title: 17px;
+	--text-title--line-height: 24px;
+
+	--default-transition-duration: 150ms;
 	--default-transition-timing-function: ease-in-out;
 }
 
 html {
-	@apply bg-zinc-950 text-white;
+	@apply bg-surface text-ink antialiased;
 }
 
 body {
-	@apply px-8;
-	font-size: 20px;
-	margin: 0 auto;
+	@apply font-sans text-body;
+	margin: 0;
 }
 
 input,
-button {
-	font-size: 20px;
+button,
+select {
+	font: inherit;
 }
 
+/* Заголовки — Unbounded: h1 32/40 700, h2 22/30 600 */
 h1 {
-	@apply text-4xl;
+	@apply font-display text-ink;
+	font-size: 32px;
+	line-height: 40px;
+	font-weight: 700;
 }
 
 h2 {
-	@apply text-2xl;
+	@apply font-display text-ink;
+	font-size: 22px;
+	line-height: 30px;
+	font-weight: 600;
+}
+
+@media (max-width: 639px) {
+	h1 {
+		font-size: 26px;
+		line-height: 34px;
+	}
 }

@@ -12,7 +12,24 @@ export function Providers({ children }: PropsWithChildren) {
 	return (
 		<QueryClientProvider client={client}>
 			<LazyMotion features={domAnimation}>{children}</LazyMotion>
-			<Toaster />
+			<Toaster
+				toastOptions={{
+					style: {
+						background: 'var(--surface-raised)',
+						color: 'var(--ink)',
+						border: '1px solid var(--border)',
+						borderRadius: 10,
+						boxShadow: 'var(--shadow-popover)',
+						fontSize: 15
+					},
+					success: {
+						iconTheme: { primary: 'var(--accent)', secondary: 'var(--on-accent)' }
+					},
+					error: {
+						iconTheme: { primary: 'var(--danger)', secondary: 'var(--surface-raised)' }
+					}
+				}}
+			/>
 			<ReactQueryDevtools initialIsOpen={false} />
 		</QueryClientProvider>
 	)

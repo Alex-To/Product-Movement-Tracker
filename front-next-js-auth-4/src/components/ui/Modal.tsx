@@ -20,21 +20,24 @@ export function Modal({ isOpen, onClose, children }: Props) {
 		<AnimatePresence>
 			{isOpen && (
 				<m.div
-					className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+					className="fixed inset-0 z-50 flex items-center justify-center bg-[#04122b]/55"
 					initial={{ opacity: 0 }}
 					animate={{ opacity: 1 }}
 					exit={{ opacity: 0 }}
 					onClick={handleBackdropClick}
 				>
 					<m.div
-						className="bg-zinc-900 p-6 rounded-lg shadow-lg w-full max-w-sm relative"
+						role="dialog"
+						aria-modal="true"
+						className="relative w-[calc(100%-2rem)] max-w-md rounded-lg border border-border bg-surface-raised p-6 text-ink shadow-popover"
 						initial={{ scale: 0.8 }}
 						animate={{ scale: 1 }}
 						exit={{ scale: 0.8 }}
 					>
 						<button
 							onClick={onClose}
-							className="absolute top-0 right-2 text-gray-500 hover:text-gray-700"
+							aria-label="Закрыть"
+							className="absolute top-4 right-4 flex size-8 items-center justify-center rounded-sm text-ink-muted hover:bg-tint hover:text-ink cursor-pointer"
 						>
 							✕
 						</button>
