@@ -18,7 +18,6 @@ const PUBLIC_USER_SELECT = {
 	role: true
 } satisfies Prisma.UserSelect
 
-// Порядок в таблице сотрудников: админ, менеджеры, официанты, кухня
 const ROLE_ORDER: Role[] = [Role.ADMIN, Role.MANAGER, Role.WAITER, Role.KITCHEN]
 
 @Injectable()
@@ -101,7 +100,6 @@ export class AdminService {
 		try {
 			await this.prisma.user.delete({ where: { id } })
 		} catch (error) {
-			// Поставки, заказы и движения ссылаются на сотрудника — история должна остаться
 			if (
 				error instanceof Prisma.PrismaClientKnownRequestError &&
 				error.code === 'P2003'

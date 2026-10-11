@@ -33,7 +33,6 @@ export class KitchenService {
 		})
 	}
 
-	// Продукты с непустыми партиями, партии по сроку (FEFO); просроченные тоже — их и списывают
 	async getProducts() {
 		return this.prisma.product.findMany({
 			orderBy: { nameProduct: 'asc' },
@@ -83,7 +82,6 @@ export class KitchenService {
 		}
 
 		return this.prisma.$transaction(async tx => {
-			// Условное обновление: остаток не уйдёт в минус даже при одновременных списаниях
 			const updated = await tx.batch.updateMany({
 				where: { id: dto.batchId, count: { gte: count } },
 				data: { count: { decrement: count } }
@@ -173,7 +171,6 @@ export class KitchenService {
 		})
 	}
 
-	// Кухня снимает только ручной стоп; AUTO снимает система, когда продуктов хватает
 	async removeManualStop(dishId: string) {
 		await this.prisma.stopList.deleteMany({
 			where: { idDish: dishId, type: StopType.MANUAL }
@@ -181,7 +178,6 @@ export class KitchenService {
 		return true
 	}
 
-	// Годный остаток по продуктам: только непросроченные партии
 	private async getAvailableStock(db: Tx | PrismaService) {
 		const rows = await db.batch.groupBy({
 			by: ['idProduct'],

@@ -1,7 +1,6 @@
 import { Role } from '@prisma/client'
 import { IsIn, IsString, MinLength } from 'class-validator'
 
-// Роль ADMIN через API выдать нельзя: администратор один, заводится сидом
 export const ASSIGNABLE_ROLES = [Role.MANAGER, Role.WAITER, Role.KITCHEN]
 
 export class CreateUserDto {

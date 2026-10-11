@@ -2,7 +2,6 @@ import { Role } from '@prisma/client'
 import { IsIn, IsOptional, IsString, MinLength } from 'class-validator'
 import { ASSIGNABLE_ROLES } from './create-user.dto'
 
-// Пустой пароль = не менять
 export class UpdateUserDto {
 	@IsOptional()
 	@MinLength(1, { message: 'Укажите имя' })

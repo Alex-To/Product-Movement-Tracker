@@ -1,5 +1,3 @@
-// Формат по брендбуку: «2,5 кг», «15.10 12:00»
-
 export const formatAmount = (value: string, unit?: string) => {
 	const number = Number(value).toLocaleString('ru-RU', {
 		maximumFractionDigits: 3

@@ -4,7 +4,6 @@ import kitchenService from '@/services/kitchen.service'
 import { useQuery } from '@tanstack/react-query'
 import { formatDateTime } from './format'
 
-// Пока нет SSE — обновляем ленту опросом
 const REFETCH_INTERVAL = 5000
 
 export function KitchenOrders() {

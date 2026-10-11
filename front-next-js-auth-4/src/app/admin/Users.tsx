@@ -15,7 +15,6 @@ import { twMerge } from 'tailwind-merge'
 import { UserForm } from './UserForm'
 import { USERS_QUERY_KEY, useDeleteUser } from './useUserMutations'
 
-// null — панель закрыта, 'new' — новый сотрудник, IUser — редактирование
 type TPanelState = null | 'new' | IUser
 
 const cellClass = 'px-4 py-3 align-middle'
@@ -26,7 +25,6 @@ export function Users() {
 	const [userToDelete, setUserToDelete] = useState<IUser | null>(null)
 	const panelRef = useRef<HTMLElement>(null)
 
-	// На узком экране панель стоит под таблицей — показываем её при открытии
 	const panelKey = panel === null ? null : panel === 'new' ? 'new' : panel.id
 	useEffect(() => {
 		if (panelKey && window.matchMedia('(max-width: 1023px)').matches) {
@@ -189,7 +187,6 @@ export function Users() {
 					ref={panelRef}
 					className="w-full shrink-0 rounded-lg border border-border bg-surface-raised p-6 shadow-card lg:sticky lg:top-24 lg:w-96">
 					<UserForm
-						// Новый key сбрасывает форму при переключении между сотрудниками
 						key={panelKey}
 						user={panel === 'new' ? null : panel}
 						onClose={() => setPanel(null)}
