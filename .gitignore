@@ -1,0 +1,12 @@
+# Local reports and workspace configuration
+/docs/
+/.ai/
+/.codex/
+/.agents/
+/.local-backup-*/
+/.idea/compiler.xml
+
+# Local environment files
+**/.env
+**/.env.local
+**/.env.*.local
