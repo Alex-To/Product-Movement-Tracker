@@ -1,5 +1,6 @@
 'use client'
 import { Button } from '@/components/ui/Button'
+import { Loading } from '@/components/ui/PizzaLoader'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import axios from 'axios'
 import Link from 'next/link'
@@ -236,7 +237,7 @@ function Editor({
 							placeholder="Продукт из справочника"
 						/>
 						{products.isPending ? (
-							<p role="status">Загрузка продуктов…</p>
+							<Loading size={32} label="Загрузка продуктов…" className="py-4" />
 						) : products.isError ? (
 							<p role="alert">
 								{managerError(products.error)}{' '}
@@ -413,7 +414,7 @@ function Loaded({ id, userId }: { id: string; userId: string }) {
 	})
 	const [revision, setRevision] = useState(0)
 	if (id === 'new') return <Editor userId={userId} reload={() => {}} />
-	if (query.isPending) return <p role="status">Загрузка рецепта…</p>
+	if (query.isPending) return <Loading label="Загрузка рецепта…" />
 	if (query.isError)
 		return (
 			<div role="alert">

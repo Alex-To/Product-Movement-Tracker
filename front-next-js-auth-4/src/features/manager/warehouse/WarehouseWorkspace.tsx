@@ -1,5 +1,6 @@
 'use client'
 import { Button } from '@/components/ui/Button'
+import { Loading } from '@/components/ui/PizzaLoader'
 import { useQuery } from '@tanstack/react-query'
 import Link from 'next/link'
 import { useState } from 'react'
@@ -61,9 +62,7 @@ function Workspace({ userId }: { userId: string }) {
 				</div>
 			</div>
 			{signals.isPending ? (
-				<p role="status" className="mb-6">
-					Загрузка сигналов склада…
-				</p>
+				<Loading label="Загрузка сигналов склада…" className="mb-6" />
 			) : signals.isError ? (
 				<div role="alert" className="mb-6 rounded-md bg-danger-tint p-4">
 					<p>{managerError(signals.error)}</p>
@@ -116,7 +115,7 @@ function Workspace({ userId }: { userId: string }) {
 				</label>
 			</form>
 			{products.isPending ? (
-				<p role="status">Загрузка продуктов склада…</p>
+				<Loading label="Загрузка продуктов склада…" />
 			) : products.isError ? (
 				<div role="alert">
 					<p>{managerError(products.error)}</p>

@@ -2,6 +2,7 @@
 
 import { errorCatch } from '@/api/api.helper'
 import { Button } from '@/components/ui/Button'
+import { Loading } from '@/components/ui/PizzaLoader'
 import waiterService from '@/services/waiter.service'
 import type { IOrderRejection } from '@/types/waiter.types'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -148,11 +149,7 @@ export function WaiterMenu() {
 				)}
 
 				{isLoading && (
-					<div
-						role="status"
-						aria-label="Загрузка"
-						className="mx-auto mt-10 size-8 animate-spin rounded-full border-2 border-border border-t-accent"
-					/>
+					<Loading size={96} />
 				)}
 				{isError && (
 					<p className="text-danger">

@@ -164,3 +164,76 @@ h2 {
 		font-size: 21px;
 	}
 }
+
+/* Лоадер «ДуДоС пицца» (components/ui/PizzaLoader.tsx), тайминги из brand/loader:
+   пауза 0–18 %, затем одна кривая. Анимация на CSS, а не SMIL: SMIL в браузере
+   стартует только после события load, и короткая загрузка проходила со стоящей пиццей.
+   Отрицательная задержка пропускает паузу первого круга — пицца едет с первого кадра */
+.pizza-turn,
+.pizza-slice-in,
+.pizza-slice-out {
+	animation-duration: 1.4s;
+	animation-delay: -0.252s;
+	animation-iteration-count: infinite;
+}
+
+.pizza-turn {
+	transform-origin: 114px 146px;
+	animation-name: pizza-turn;
+}
+
+.pizza-slice-in {
+	animation-name: pizza-slice-in;
+}
+
+.pizza-slice-out {
+	animation-name: pizza-slice-out;
+}
+
+@keyframes pizza-turn {
+	0%,
+	18% {
+		transform: rotate(0deg);
+		animation-timing-function: cubic-bezier(0.65, 0, 0.35, 1);
+	}
+	100% {
+		transform: rotate(-45deg);
+	}
+}
+
+/* Золотой кусок въезжает в паз и становится цвета пиццы */
+@keyframes pizza-slice-in {
+	0%,
+	18% {
+		transform: translate(0, 0);
+		fill: var(--gold);
+		animation-timing-function: cubic-bezier(0.65, 0, 0.35, 1);
+	}
+	100% {
+		transform: translate(-24px, 34px);
+		fill: currentColor;
+	}
+}
+
+/* Сосед вылетает на его место и золотеет; (41, -7.1) — сдвиг (24, -34), повёрнутый на +45° */
+@keyframes pizza-slice-out {
+	0%,
+	18% {
+		transform: translate(0, 0);
+		fill: currentColor;
+		animation-timing-function: cubic-bezier(0.65, 0, 0.35, 1);
+	}
+	100% {
+		transform: translate(41px, -7.1px);
+		fill: var(--gold);
+	}
+}
+
+/* Без анимации остаётся первый кадр — это и есть статичный знак */
+@media (prefers-reduced-motion: reduce) {
+	.pizza-turn,
+	.pizza-slice-in,
+	.pizza-slice-out {
+		animation: none;
+	}
+}

@@ -1,6 +1,7 @@
 'use client'
 
 import kitchenService from '@/services/kitchen.service'
+import { Loading } from '@/components/ui/PizzaLoader'
 import { useQuery } from '@tanstack/react-query'
 import { formatAmount, formatDateTime } from '../format'
 
@@ -15,7 +16,7 @@ export function WriteOffHistory() {
 	return (
 		<section className="flex max-w-3xl flex-col gap-3">
 			<h2>Мои последние списания</h2>
-			{isLoading && <p className="text-ink-muted">Загрузка…</p>}
+			{isLoading && <Loading className="items-start py-2" />}
 			{!isLoading && !writeOffs.length && (
 				<p className="text-ink-muted">Списаний пока нет</p>
 			)}

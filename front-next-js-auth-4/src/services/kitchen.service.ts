@@ -14,6 +14,10 @@ class KitchenService {
 		return instance.get<IKitchenOrder[]>(`${this._BASE_URL}/orders`)
 	}
 
+	async markOrderReady(orderId: string) {
+		return instance.post(`${this._BASE_URL}/orders/${orderId}/ready`)
+	}
+
 	async fetchProducts() {
 		return instance.get<IKitchenProduct[]>(`${this._BASE_URL}/products`)
 	}

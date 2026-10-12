@@ -2,6 +2,7 @@
 
 import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
+import { Loading } from '@/components/ui/PizzaLoader'
 import { PUBLIC_PAGES } from '@/config/pages/public.config'
 import authService from '@/services/auth/auth.service'
 import userService from '@/services/user.service'
@@ -82,7 +83,7 @@ export function ProductsWorkspace() {
 		onError: error => toast.error(managerError(error))
 	})
 
-	if (session.isPending) return <p role="status" className="py-10 text-ink-muted">Загрузка справочника…</p>
+	if (session.isPending) return <Loading size={96} label="Загрузка справочника…" className="py-24" />
 	if (!allowed) {
 		const unauthorized = axios.isAxiosError(session.error) && session.error.response?.status === 401
 		return <section className="mx-auto max-w-lg rounded-lg border border-border bg-surface-raised p-8 shadow-card">
@@ -112,7 +113,7 @@ export function ProductsWorkspace() {
 					{units.isError && <div role="alert" className="mb-4 rounded-md bg-danger-tint p-3 text-caption text-danger">Не удалось загрузить единицы. <button className="underline" onClick={() => units.refetch()}>Повторить</button></div>}
 					<div className="overflow-hidden rounded-lg border border-border bg-surface-raised shadow-card">
 						<div className="flex items-center justify-between border-b border-border px-5 py-3 text-caption"><b>Каталог {data && <span className="ml-2 rounded-sm bg-tint px-2 py-0.5 text-accent">{data.total}</span>}</b><span role="status" className="text-ink-muted">{products.isFetching ? 'Обновляем…' : 'Годный остаток'}</span></div>
-						{products.isPending ? <div role="status" className="px-5 py-12 text-center text-ink-muted">Загрузка продуктов…</div>
+						{products.isPending ? <Loading label="Загрузка продуктов…" className="py-12" />
 							: products.isError ? <div role="alert" className="p-6"><p className="text-danger">{managerError(products.error)}</p><Button variant="secondary" className="mt-3" onClick={() => products.refetch()}>Повторить</Button></div>
 								: !data?.items.length ? <div className="px-6 py-14 text-center"><TbPackage className="mx-auto mb-4 text-gold" size={40} aria-hidden /><h2 className="!text-title">{search || unitId ? 'Ничего не найдено' : page > 1 ? 'На этой странице нет продуктов' : 'Добавьте первый продукт'}</h2><p className="mx-auto mt-2 max-w-sm text-caption text-ink-muted">{search || unitId ? 'Измените запрос или сбросьте фильтры.' : 'Создайте единицу измерения и продукт в форме рядом. Количество появится после поставки.'}</p>{(search || unitId || page > 1) && <Button variant="ghost" className="mt-3" onClick={() => { setSearchDraft(''); changeFilters({ search: '', unitId: '', page: '' }) }}>Показать все продукты</Button>}</div>
 									: <div className="relative overflow-x-auto"><table className="w-full min-w-[570px] text-left text-caption"><thead className="border-b border-border bg-surface text-ink-muted"><tr><th className="px-5 py-3">Продукт</th><th className="px-3 py-3">Ед.</th><th className="px-3 py-3 text-right">Остаток</th><th className="px-3 py-3 text-right">В блюдах</th><th className="px-4 py-3"><span className="sr-only">Действия</span></th></tr></thead>

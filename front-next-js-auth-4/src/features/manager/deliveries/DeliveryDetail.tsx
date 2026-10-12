@@ -1,6 +1,7 @@
 'use client'
 
 import { Button } from '@/components/ui/Button'
+import { Loading } from '@/components/ui/PizzaLoader'
 import { useQuery } from '@tanstack/react-query'
 import Link from 'next/link'
 import { managerError } from '../api/manager.api'
@@ -20,9 +21,7 @@ function Receipt({ id, userId }: { id: string; userId: string }) {
 				← Поставки
 			</Link>
 			{query.isPending ? (
-				<p role="status" className="mt-6">
-					Загрузка поставки…
-				</p>
+				<Loading label="Загрузка поставки…" className="mt-6" />
 			) : query.isError ? (
 				<div role="alert" className="mt-6">
 					<p>{managerError(query.error)}</p>

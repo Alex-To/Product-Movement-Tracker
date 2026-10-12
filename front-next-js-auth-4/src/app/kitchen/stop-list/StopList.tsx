@@ -2,6 +2,7 @@
 
 import { errorCatch } from '@/api/api.helper'
 import { Button } from '@/components/ui/Button'
+import { Loading } from '@/components/ui/PizzaLoader'
 import kitchenService from '@/services/kitchen.service'
 import type { IStopListDish } from '@/types/kitchen.types'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -93,11 +94,7 @@ export function StopList() {
 			<h1>Стоп-лист</h1>
 
 			{isLoading && (
-				<div
-					role="status"
-					aria-label="Загрузка"
-					className="mx-auto mt-10 size-8 animate-spin rounded-full border-2 border-border border-t-accent"
-				/>
+				<Loading size={96} />
 			)}
 			{isError && <p className="text-danger">Не удалось загрузить стоп-лист</p>}
 			{!isLoading && !isError && !dishes.length && (

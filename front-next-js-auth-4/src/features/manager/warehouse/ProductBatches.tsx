@@ -1,5 +1,6 @@
 'use client'
 import { Button } from '@/components/ui/Button'
+import { Loading } from '@/components/ui/PizzaLoader'
 import { useQuery } from '@tanstack/react-query'
 import Link from 'next/link'
 import { Fragment, useState } from 'react'
@@ -30,9 +31,7 @@ export function ProductBatches({
 	})
 	if (query.isPending)
 		return (
-			<p role="status" className="p-4">
-				Загрузка партий…
-			</p>
+			<Loading size={32} label="Загрузка партий…" className="py-4" />
 		)
 	if (query.isError)
 		return (

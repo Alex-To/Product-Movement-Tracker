@@ -25,6 +25,13 @@ export class KitchenController {
 		return this.kitchenService.getOrders()
 	}
 
+	@HttpCode(200)
+	@Auth(Role.KITCHEN)
+	@Post('orders/:id/ready')
+	async markOrderReady(@Param('id') orderId: string) {
+		return this.kitchenService.markOrderReady(orderId)
+	}
+
 	@Auth(Role.KITCHEN)
 	@Get('products')
 	async getProducts() {

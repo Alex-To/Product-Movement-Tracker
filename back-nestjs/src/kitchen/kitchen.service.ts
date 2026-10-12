@@ -26,6 +26,7 @@ export class KitchenService {
 			select: {
 				id: true,
 				createDate: true,
+				readyAt: true,
 				creater: { select: { name: true } },
 				items: {
 					select: {
@@ -59,6 +60,24 @@ export class KitchenService {
 			...order,
 			number: ((before + orders.length - 1 - index) % ORDER_NUMBER_CYCLE) + 1
 		}))
+	}
+	// Повтор нажатия ничего не меняет: время готовности остаётся первым
+	async markOrderReady(orderId: string) {
+		const order = await this.prisma.order.findUnique({
+			where: { id: orderId },
+			select: { id: true, readyAt: true }
+		})
+		if (!order) throw new NotFoundException('Заказ не найден')
+		if (order.readyAt) return order
+
+		await this.prisma.order.updateMany({
+			where: { id: orderId, readyAt: null },
+			data: { readyAt: new Date() }
+		})
+		return this.prisma.order.findUnique({
+			where: { id: orderId },
+			select: { id: true, readyAt: true }
+		})
 	}
 	async getProducts() {
 		return this.prisma.product.findMany({

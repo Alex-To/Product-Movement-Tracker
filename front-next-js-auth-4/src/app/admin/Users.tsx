@@ -2,6 +2,7 @@
 
 import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
+import { Loading } from '@/components/ui/PizzaLoader'
 import { ROLE_LABELS } from '@/config/pages/role.config'
 import { useProfile } from '@/hooks/useProfile'
 import adminService from '@/services/admin.service'
@@ -94,11 +95,7 @@ export function Users() {
 										colSpan={4}
 										className="py-10"
 									>
-										<div
-											role="status"
-											aria-label="Загрузка"
-											className="mx-auto size-8 animate-spin rounded-full border-2 border-border border-t-accent"
-										/>
+										<Loading className="py-0" />
 									</td>
 								</tr>
 							) : isError ? (

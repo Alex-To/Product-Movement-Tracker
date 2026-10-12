@@ -1,6 +1,6 @@
 'use client'
 
-import { MiniLoader } from '@/components/ui/MiniLoader'
+import { PizzaLoader } from '@/components/ui/PizzaLoader'
 import { twMerge } from '@/utils/tw-merge'
 import styles from './AuthForm.module.css'
 import { useAuthForm } from './useAuthForm'
@@ -49,7 +49,7 @@ export function AuthForm() {
 					)}
 					disabled={isLoading}
 				>
-					{isLoading ? <MiniLoader /> : 'Войти'}
+					{isLoading ? <PizzaLoader size={26} /> : 'Войти'}
 				</button>
 			</div>
 		</form>

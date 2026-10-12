@@ -1,6 +1,7 @@
 'use client'
 
 import { Button } from '@/components/ui/Button'
+import { Loading } from '@/components/ui/PizzaLoader'
 import { PUBLIC_PAGES } from '@/config/pages/public.config'
 import userService from '@/services/user.service'
 import { UserRole } from '@/types/auth.types'
@@ -23,7 +24,7 @@ export function ManagerAccess({
 		staleTime: 0,
 		refetchOnMount: 'always'
 	})
-	if (session.isPending) return <p role="status">Проверяем доступ…</p>
+	if (session.isPending) return <Loading size={96} label="Проверяем доступ…" className="py-24" />
 	if (session.isError || session.data?.role !== UserRole.MANAGER)
 		return (
 			<section className="rounded-lg border border-border bg-surface-raised p-6">

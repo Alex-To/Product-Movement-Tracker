@@ -112,6 +112,8 @@ model Batch {
 model Order {
   id         String   @id @default(cuid()) @map("id_order")
   createDate DateTime @default(now()) @map("create_date")
+  // Когда кухня нажала «Заказ готов»; пусто — заказ ещё готовится
+  readyAt    DateTime? @map("ready_at")
 
   createrId String @map("creater_id")
   creater   User   @relation(fields: [createrId], references: [id])

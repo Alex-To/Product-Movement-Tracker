@@ -1,6 +1,7 @@
 'use client'
 
 import { Button } from '@/components/ui/Button'
+import { Loading } from '@/components/ui/PizzaLoader'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import axios from 'axios'
 import Link from 'next/link'
@@ -303,7 +304,7 @@ function Workspace({ userId }: { userId: string }) {
 								onChange={(e) => setProductSearch(e.target.value)}
 							/>
 							{products.isPending ? (
-								<p role="status">Загрузка продуктов…</p>
+								<Loading size={32} label="Загрузка продуктов…" className="py-4" />
 							) : products.isError ? (
 								<p role="alert">
 									{managerError(products.error)}{' '}
@@ -538,7 +539,7 @@ function Workspace({ userId }: { userId: string }) {
 					</Button>
 				</form>
 				{history.isPending ? (
-					<p role="status">Загрузка поставок…</p>
+					<Loading label="Загрузка поставок…" />
 				) : history.isError ? (
 					<div role="alert">
 						<p>{managerError(history.error)}</p>

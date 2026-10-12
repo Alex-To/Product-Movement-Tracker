@@ -41,8 +41,6 @@ export function DishRow({
 	const modified = total - count
 	// Порции блюда ещё есть, но общие продукты уже заняты другими блюдами чека
 	const isShared = !isMax && !canAdd
-	// Официанту не показываем ни сроки годности, ни причину стоп-листа
-	const reason = dish.isStopped ? null : (dish.expiring?.productName ?? null)
 
 	// Круглые кнопки внутри группы порций
 	const roundButton = twMerge(
@@ -94,16 +92,6 @@ export function DishRow({
 						</Badge>
 					)}
 				</span>
-				{reason && (
-					<span
-						className={twMerge(
-							'text-caption',
-							dish.isHot ? 'font-semibold text-fire-ink' : 'text-ink-muted'
-						)}
-					>
-						{reason}
-					</span>
-				)}
 				{!dish.isStopped && (
 					<span className="font-mono text-caption text-ink-muted">
 						Можно: {formatPortions(dish.portions)}

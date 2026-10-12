@@ -3,6 +3,8 @@ export interface IKitchenOrder {
 	// Порядковый номер по кругу 1…99
 	number: number
 	createDate: string
+	// Когда кухня отметила «Заказ готов»; null — ещё готовится
+	readyAt: string | null
 	creater: { name: string }
 	items: {
 		id: string

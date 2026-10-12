@@ -1,7 +1,7 @@
 'use client'
 
 import { Button } from '@/components/ui/Button'
-import { MiniLoader } from '@/components/ui/MiniLoader'
+import { PizzaLoader } from '@/components/ui/PizzaLoader'
 import { ROLE_LABELS } from '@/config/pages/role.config'
 import { UserRole } from '@/types/auth.types'
 import {
@@ -211,10 +211,7 @@ export function UserForm({ user, onClose }: Props) {
 					className="min-w-28"
 				>
 					{isPending ? (
-						<MiniLoader
-							width={22}
-							height={22}
-						/>
+						<PizzaLoader size={24} />
 					) : (
 						'Сохранить'
 					)}

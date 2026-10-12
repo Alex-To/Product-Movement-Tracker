@@ -1,6 +1,7 @@
 'use client'
 import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
+import { Loading } from '@/components/ui/PizzaLoader'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
@@ -133,7 +134,7 @@ function Workspace({
 					</form>
 					<div className="max-h-[55vh] space-y-3 overflow-y-auto lg:max-h-[60vh]">
 						{query.isPending ? (
-							<p role="status">Загрузка блюд…</p>
+							<Loading label="Загрузка блюд…" />
 						) : query.isError ? (
 							<div role="alert">
 								<p>{managerError(query.error)}</p>
