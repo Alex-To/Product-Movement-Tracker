@@ -1,12 +1,15 @@
 'use client'
 
 import { AppHeader } from '@/components/ui/AppHeader'
+import { twMerge } from '@/utils/tw-merge'
+import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { TbPackage } from 'react-icons/tb'
+import { TbPackage, TbSettings } from 'react-icons/tb'
 import { MANAGER_ROUTES } from '../config/manager.routes'
 
 export function ManagerNav() {
 	const pathname = usePathname()
+	const isSettings = pathname === MANAGER_ROUTES.SETTINGS
 
 	return (
 		<AppHeader
@@ -23,6 +26,27 @@ export function ManagerNav() {
 					icon: <TbPackage size={18} aria-hidden />
 				}
 			]}
+			actions={
+				// Круглая кнопка того же размера, что и переключатель темы
+				<Link
+					href={MANAGER_ROUTES.SETTINGS}
+					aria-label="Настройки"
+					title="Настройки ресторана"
+					aria-current={isSettings ? 'page' : undefined}
+					className={twMerge(
+						'inline-flex size-10 shrink-0 items-center justify-center rounded-full border transition-colors sm:size-11',
+						'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent',
+						isSettings
+							? 'border-accent bg-accent text-on-accent'
+							: 'border-border-strong bg-surface-raised text-ink hover:bg-tint'
+					)}
+				>
+					<TbSettings
+						size={18}
+						aria-hidden
+					/>
+				</Link>
+			}
 		/>
 	)
 }

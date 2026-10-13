@@ -55,18 +55,28 @@ const lineProducts = (line: ICartLine, menu: IMenuDish[]) =>
 		item => !line.excluded.includes(item.productId)
 	)
 
-// Продукты, которых чеку не хватает. У разных блюд бывают общие ингредиенты,
-// поэтому остаток одного блюда ничего не гарантирует для всего чека
-const overusedProducts = (cart: TCart, menu: IMenuDish[]) => {
+// Сколько каждого продукта уже занято чеком, в тысячных
+const usedProducts = (cart: TCart, menu: IMenuDish[]) => {
 	const used = new Map<string, number>()
-	const available = new Map<string, number>()
-
 	for (const line of Object.values(cart)) {
 		for (const item of lineProducts(line, menu)) {
 			used.set(
 				item.productId,
 				(used.get(item.productId) ?? 0) + toMilli(item.perPortion) * line.count
 			)
+		}
+	}
+	return used
+}
+
+// Продукты, которых чеку не хватает. У разных блюд бывают общие ингредиенты,
+// поэтому остаток одного блюда ничего не гарантирует для всего чека
+const overusedProducts = (cart: TCart, menu: IMenuDish[]) => {
+	const used = usedProducts(cart, menu)
+	const available = new Map<string, number>()
+
+	for (const line of Object.values(cart)) {
+		for (const item of lineProducts(line, menu)) {
 			available.set(item.productId, toMilli(item.available))
 		}
 	}
@@ -76,6 +86,23 @@ const overusedProducts = (cart: TCart, menu: IMenuDish[]) => {
 		if (amount > (available.get(productId) ?? 0)) overused.add(productId)
 	}
 	return overused
+}
+
+/**
+ * «Можно: N» с учётом уже набранного чека: сколько ещё обычных порций блюда
+ * поместится в остаток, если вычесть всё, что заняли строки чека
+ */
+export const portionsLeft = (cart: TCart, dish: IMenuDish, menu: IMenuDish[]) => {
+	if (dish.isStopped || !dish.ingredients.length) return 0
+	const used = usedProducts(cart, menu)
+	return Math.min(
+		...dish.ingredients.map(item => {
+			const perPortion = toMilli(item.perPortion)
+			if (perPortion <= 0) return 0
+			const free = toMilli(item.available) - (used.get(item.productId) ?? 0)
+			return Math.max(Math.floor(free / perPortion), 0)
+		})
+	)
 }
 
 const increment = (cart: TCart, dishId: string, excluded: string[]): TCart => {
@@ -187,6 +214,11 @@ export function useCart(menu: IMenuDish[] | undefined) {
 		[cart, menu]
 	)
 
+	const left = useCallback(
+		(dish: IMenuDish) => (menu ? portionsLeft(cart, dish, menu) : dish.portions),
+		[cart, menu]
+	)
+
 	const remove = useCallback((key: string) => {
 		forget(key)
 		setCart(prev => {
@@ -230,5 +262,5 @@ export function useCart(menu: IMenuDish[] | undefined) {
 
 	const totalPortions = Object.values(cart).reduce((sum, line) => sum + line.count, 0)
 
-	return { cart, adjustments, add, canAdd, remove, clear, limitTo, totalPortions }
+	return { cart, adjustments, add, canAdd, left, remove, clear, limitTo, totalPortions }
 }

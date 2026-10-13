@@ -39,7 +39,7 @@ export function WaiterMenu() {
 		refetchInterval: REFETCH_INTERVAL
 	})
 
-	const { cart, adjustments, add, canAdd, remove, clear, limitTo, totalPortions } =
+	const { cart, adjustments, add, canAdd, left, remove, clear, limitTo, totalPortions } =
 		useCart(menu)
 
 	const [rejected, setRejected] = useState<{
@@ -58,7 +58,7 @@ export function WaiterMenu() {
 				}))
 			}),
 		onSuccess({ data }) {
-			toast.success(`Заказ №${data.id.slice(-5)} принят`)
+			toast.success(`Заказ №${data.number} принят`)
 			clear()
 		},
 		onError(error) {
@@ -101,6 +101,7 @@ export function WaiterMenu() {
 					count={cart[dish.id]?.count ?? 0}
 					total={counts[dish.id] ?? 0}
 					canAdd={canAdd(dish)}
+					left={left(dish)}
 					onAdd={() => add(dish)}
 					onRemove={() => remove(dish.id)}
 					onExclude={() => setExcludingId(dish.id)}

@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query'
 import Link from 'next/link'
 import { useState } from 'react'
 import { ManagerAccess } from '../components/ManagerAccess'
+import { RejectionsLog } from '../rejections/RejectionsLog'
 import { MANAGER_ROUTES } from '../config/manager.routes'
 import { managerError } from '../api/manager.api'
 import { catalogInput } from '../products/styles'
@@ -133,9 +134,9 @@ function Workspace({ userId }: { userId: string }) {
 				/>
 			)}
 			<p className="mt-5 text-caption text-ink-muted">
-				Раскройте продукт, чтобы посмотреть партии. Годные партии идут по FEFO;
-				просроченные показаны отдельно. Даты отображаются в часовом поясе
-				устройства.
+				Раскройте продукт, чтобы посмотреть партии. Годные партии идут по FEFO:
+				ранний срок первым, при равном сроке — раньше принятая. Даты отображаются
+				в часовом поясе устройства.
 			</p>
 			{products.data && (
 				<p className="mt-2 text-caption text-ink-muted" role="status">
@@ -144,6 +145,7 @@ function Workspace({ userId }: { userId: string }) {
 						: `Данные на ${warehouseDate(products.data.generatedAt)}`}
 				</p>
 			)}
+			<RejectionsLog userId={userId} />
 		</>
 	)
 }

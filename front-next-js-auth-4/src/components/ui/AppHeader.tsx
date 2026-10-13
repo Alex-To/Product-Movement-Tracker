@@ -27,11 +27,19 @@ interface Props {
 	tabsLabel?: string
 	// inline — вкладки в строке с логотипом (кухня), below — отдельной строкой (менеджер)
 	tabsPlacement?: 'inline' | 'below'
+	// Кнопки роли слева от пользователя: блок пользователя, «Выйти» и тема не сдвигаются
+	actions?: ReactNode
 }
 
 // Общая шапка всех ролей: логотип слева; справа пользователь, «Выйти» и тема —
 // всегда в одном и том же месте
-export function AppHeader({ homeHref, tabs, tabsLabel, tabsPlacement = 'below' }: Props) {
+export function AppHeader({
+	homeHref,
+	tabs,
+	tabsLabel,
+	tabsPlacement = 'below',
+	actions
+}: Props) {
 	const router = useRouter()
 	const queryClient = useQueryClient()
 	const { user } = useProfile()
@@ -99,6 +107,7 @@ export function AppHeader({ homeHref, tabs, tabsLabel, tabsPlacement = 'below' }
 				{/* Нулевая основа и min-w-0: на узком телефоне блок не переносится под логотип,
 				    а имя и логин сокращаются многоточием */}
 				<div className="ml-auto flex min-w-0 flex-1 basis-0 items-center justify-end gap-2 sm:gap-3">
+					{actions}
 					{user.login && (
 						<div className="min-w-0 text-right leading-tight">
 							<div className="truncate text-caption font-semibold sm:text-body">

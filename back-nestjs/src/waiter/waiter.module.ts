@@ -1,10 +1,13 @@
 import { PrismaService } from '@/prisma.service'
 import { Module } from '@nestjs/common'
+import { SettingsModule } from '../settings/settings.module'
+import { HotPreviewController } from './hot-preview.controller'
 import { WaiterController } from './waiter.controller'
 import { WaiterService } from './waiter.service'
 
 @Module({
-	controllers: [WaiterController],
+	imports: [SettingsModule],
+	controllers: [WaiterController, HotPreviewController],
 	providers: [WaiterService, PrismaService]
 })
 export class WaiterModule {}

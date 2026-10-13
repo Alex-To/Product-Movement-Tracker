@@ -19,6 +19,10 @@ export interface IKitchenBatch {
 	id: string
 	count: string
 	EXP: string
+	// Решает сервер: часы устройства могут врать.
+	// unusable — до конца срока меньше запаса на готовку: кухня из партии не берёт
+	status: 'expired' | 'unusable' | 'urgent' | 'fresh'
+	expired: boolean
 	delivery: { number: string }
 }
 

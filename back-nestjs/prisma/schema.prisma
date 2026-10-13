@@ -18,6 +18,7 @@ model User {
   stockMovements StockMovement[]
   stopLists      StopList[]
   messages       Message[]
+  orderRejections OrderRejection[]
 
   @@map("users")
 }
@@ -32,6 +33,13 @@ enum Role {
 enum StopType {
   AUTO
   MANUAL
+}
+
+// Почему заказ не принят: вычисляется сервером, человек причину не вводит
+enum RejectionReason {
+  STOP_LIST
+  SHORTAGE
+  BUSY
 }
 
 enum MessageType {
@@ -112,6 +120,8 @@ model Batch {
 model Order {
   id         String   @id @default(cuid()) @map("id_order")
   createDate DateTime @default(now()) @map("create_date")
+  // Номер для кухни: сквозной круг 1…99, записывается при создании заказа
+  number     Int      @map("number")
   // Когда кухня нажала «Заказ готов»; пусто — заказ ещё готовится
   readyAt    DateTime? @map("ready_at")
 
@@ -121,6 +131,7 @@ model Order {
   items          OrderItem[]
   stockMovements StockMovement[]
 
+  @@index([createDate, id])
   @@map("orders")
 }
 
@@ -193,8 +204,9 @@ model StockMovement {
   idOrder String? @map("id_order")
   order   Order?  @relation(fields: [idOrder], references: [id])
 
-  createrId String @map("creater_id")
-  creater   User   @relation(fields: [createrId], references: [id])
+  // Пусто — списала система: партия просрочилась (заказа тоже нет)
+  createrId String? @map("creater_id")
+  creater   User?   @relation(fields: [createrId], references: [id], onDelete: Restrict)
 
   messages Message[]
 
@@ -217,9 +229,13 @@ model Message {
   @@map("messages")
 }
 
+// Блюдо в стопе, пока есть открытая запись (closedAt пусто). Снятые записи —
+// история «поставлен/снят», хранятся неделю и удаляются автоматически
 model StopList {
-  id   String   @id @default(cuid()) @map("id_stop_list")
-  type StopType
+  id        String    @id @default(cuid()) @map("id_stop_list")
+  type      StopType
+  createdAt DateTime  @default(now()) @map("created_at")
+  closedAt  DateTime? @map("closed_at")
 
   idDish String @map("id_dish")
   dish   Dish   @relation(fields: [idDish], references: [id], onDelete: Cascade)
@@ -227,6 +243,44 @@ model StopList {
   createrId String? @map("creater_id")
   creater   User?   @relation(fields: [createrId], references: [id])
 
-  @@unique([idDish, type])
+  @@index([idDish, closedAt])
+  @@index([closedAt])
   @@map("stop_list")
+}
+
+// Настройки ресторана — ровно одна строка (id = 1), меняет менеджер.
+// Значения по умолчанию утверждены: запас на готовку 30 мин;
+// «срочно» — осталось не больше 25 % срока хранения, но в пределах 24 ч … 7 дн; горячих блюд 3
+model Settings {
+  id                 Int      @id @default(1)
+  cookReserveMinutes Int      @default(30) @map("cook_reserve_minutes")
+  urgentPercent      Int      @default(25) @map("urgent_percent")
+  urgentMinHours     Int      @default(24) @map("urgent_min_hours")
+  urgentMaxHours     Int      @default(168) @map("urgent_max_hours")
+  hotLimit           Int      @default(3) @map("hot_limit")
+  // За сколько дней считать спрос на блюдо для горячих предложений
+  demandDays         Int      @default(7) @map("demand_days")
+  updatedAt          DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("settings")
+}
+
+// Отклонённые заказы — для менеджера: какой спрос не удалось закрыть и почему.
+// Официанту и кухне журнал не показывается
+model OrderRejection {
+  id         String          @id @default(cuid()) @map("id_order_rejection")
+  createDate DateTime        @default(now()) @map("create_date")
+  reason     RejectionReason
+  // Снимок чека на момент отказа: блюдо, порции, что гость просил убрать
+  lines      Json
+  // Блюда в стоп-листе и недостающие продукты: сколько нужно и сколько было годного
+  details    Json
+
+  // Имя — снимком: журнал переживает удаление сотрудника
+  waiterName String          @map("waiter_name")
+  waiterId   String?         @map("waiter_id")
+  waiter     User?           @relation(fields: [waiterId], references: [id], onDelete: SetNull)
+
+  @@index([createDate])
+  @@map("order_rejections")
 }

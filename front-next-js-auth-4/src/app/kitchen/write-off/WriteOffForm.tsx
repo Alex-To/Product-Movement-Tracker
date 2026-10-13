@@ -7,7 +7,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { type FormEvent, useState } from 'react'
 import toast from 'react-hot-toast'
 import { twMerge } from '@/utils/tw-merge'
-import { formatAmount, formatDateTime, isExpired } from '../format'
+import { formatAmount, formatDateTime } from '../format'
 
 export function WriteOffForm() {
 	const queryClient = useQueryClient()
@@ -102,32 +102,45 @@ export function WriteOffForm() {
 						<legend className="mb-2 font-semibold">
 							<span className="text-gold-ink">2.</span> Партия (сначала с ранним сроком)
 						</legend>
-						{product.batches.map(b => (
-							<label
-								key={b.id}
-								className={twMerge(
-									'flex min-h-14 cursor-pointer items-center gap-3 rounded-md border-2 bg-surface px-4 py-3',
-									batchId === b.id ? 'border-accent' : 'border-transparent'
-								)}
-							>
-								<input
-									type="radio"
-									name="write-off-batch"
-									value={b.id}
-									checked={batchId === b.id}
-									onChange={() => setBatchId(b.id)}
-									className="size-5 shrink-0 accent-gold"
-								/>
-								<span>
-									<b>{b.delivery.number}</b> · остаток{' '}
-									{formatAmount(b.count, product.unit.name)} · годен до{' '}
-									{formatDateTime(b.EXP)}
-									{isExpired(b.EXP) && (
-										<b className="text-danger"> · просрочено</b>
+						{product.batches.map(b => {
+							// Из партии у самого конца срока кухня уже не берёт — её целиком списывает менеджер
+							const locked = b.status === 'unusable' || b.status === 'expired'
+							return (
+								<label
+									key={b.id}
+									className={twMerge(
+										'flex min-h-14 items-center gap-3 rounded-md border-2 bg-surface px-4 py-3',
+										locked ? 'cursor-not-allowed opacity-70' : 'cursor-pointer',
+										batchId === b.id ? 'border-accent' : 'border-transparent'
 									)}
-								</span>
-							</label>
-						))}
+								>
+									<input
+										type="radio"
+										name="write-off-batch"
+										value={b.id}
+										checked={batchId === b.id}
+										disabled={locked}
+										onChange={() => setBatchId(b.id)}
+										className="size-5 shrink-0 accent-gold"
+									/>
+									<span>
+										<b>{b.delivery.number}</b> · остаток{' '}
+										{formatAmount(b.count, product.unit.name)} · годен до{' '}
+										{formatDateTime(b.EXP)}
+										{b.expired ? (
+											<b className="text-danger"> · просрочено</b>
+										) : (
+											b.status === 'unusable' && (
+												<b className="text-danger">
+													{' '}
+													· нельзя готовить — списывает менеджер
+												</b>
+											)
+										)}
+									</span>
+								</label>
+							)
+						})}
 					</fieldset>
 				)}
 

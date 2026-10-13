@@ -1,41 +1,115 @@
 'use client'
+import { Badge } from '@/components/ui/Badge'
+import { Button } from '@/components/ui/Button'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import Link from 'next/link'
+import toast from 'react-hot-toast'
+import { managerError } from '../api/manager.api'
 import { MANAGER_ROUTES } from '../config/manager.routes'
 import {
+	type AutoWriteOff,
+	warehouseApi,
 	warehouseDate,
+	warehouseKeys,
 	warehouseQuantity,
 	type WarehouseBatch,
 	type WarehouseSignals as Signals
 } from './warehouse.api'
 
+function DeliveryLink({ batch }: { batch: WarehouseBatch }) {
+	return (
+		<Link
+			href={`${MANAGER_ROUTES.DELIVERIES}/${batch.delivery.id}`}
+			className="mt-1 inline-block break-words text-caption font-semibold text-gold-ink underline"
+		>
+			Накладная № {batch.delivery.number}
+		</Link>
+	)
+}
+
 function BatchSignal({ batch }: { batch: WarehouseBatch }) {
 	return (
 		<li className="border-b border-border py-3 last:border-0">
-			<b className="break-words">{batch.productName}</b>
+			<span className="flex flex-wrap items-center gap-2">
+				<b className="break-words">{batch.productName}</b>
+				{batch.status === 'unusable' && (
+					<Badge variant="error">Нельзя готовить</Badge>
+				)}
+			</span>
 			<p className="mt-1 text-caption">
 				{warehouseQuantity(batch.quantity)} {batch.unit} ·{' '}
 				{batch.expired ? 'Истекло' : 'Годен до'}{' '}
 				{warehouseDate(batch.expiresAt)}
 			</p>
-			<Link
-				href={`${MANAGER_ROUTES.DELIVERIES}/${batch.delivery.id}`}
-				className="mt-1 inline-block break-words text-caption font-semibold text-gold-ink underline"
-			>
-				Накладная № {batch.delivery.number}
-			</Link>
+			<DeliveryLink batch={batch} />
 		</li>
 	)
 }
+
+function AutoWriteOffSignal({
+	item,
+	onRead,
+	disabled
+}: {
+	item: AutoWriteOff
+	onRead: () => void
+	disabled: boolean
+}) {
+	return (
+		<li className="border-b border-danger/20 py-3 last:border-0">
+			<b className="break-words">{item.batch.productName}</b>
+			<p className="mt-1 text-caption">
+				{warehouseQuantity(item.quantity)} {item.batch.unit} · истекло{' '}
+				{warehouseDate(item.batch.expiresAt)}
+			</p>
+			<p className="mt-1 text-caption font-semibold text-danger">
+				Списано системой автоматически · {warehouseDate(item.writtenOffAt)}
+			</p>
+			<div className="mt-1 flex flex-wrap items-center justify-between gap-2">
+				<DeliveryLink batch={item.batch} />
+				<Button
+					size="sm"
+					variant="ghost"
+					disabled={disabled}
+					onClick={onRead}
+				>
+					Понятно
+				</Button>
+			</div>
+		</li>
+	)
+}
+
 export function WarehouseSignals({ data }: { data: Signals }) {
+	const client = useQueryClient()
+	const read = useMutation({
+		mutationFn: warehouseApi.readMessages,
+		onSuccess: () => client.invalidateQueries({ queryKey: warehouseKeys.all }),
+		onError: (error) => toast.error(managerError(error))
+	})
+	// Просроченные остатки система списывает сама; здесь — что она списала
+	// и что ещё не успела (между проверками сроков)
+	const expiredTotal = data.autoWrittenOff.total + data.expired.total
+
 	return (
 		<div className="mb-7 grid items-start gap-4 lg:grid-cols-3">
 			<section
-				aria-label="Истекают в ближайшие 24 часа"
+				aria-label="Истекающие партии"
 				className="min-w-0 rounded-lg border-2 border-fire bg-fire-tint p-6"
 			>
 				<h2 className="!text-title text-fire-ink">
-					Истекают в ближайшие 24 ч · {data.expiring.total}
+					Истекают · {data.expiring.total}
 				</h2>
+				<p className="mt-1 text-caption text-fire-ink">
+					Порог срочности и запас на готовку —{' '}
+					<Link
+						href={MANAGER_ROUTES.SETTINGS}
+						className="font-semibold underline"
+					>
+						в настройках
+					</Link>
+					.
+				</p>
 				<ul className="mt-2 max-h-64 overflow-y-auto">
 					{data.expiring.items.map((batch) => (
 						<BatchSignal key={batch.id} batch={batch} />
@@ -54,22 +128,45 @@ export function WarehouseSignals({ data }: { data: Signals }) {
 				aria-label="Просроченные партии"
 				className="min-w-0 rounded-lg border-2 border-danger/40 bg-danger-tint p-6"
 			>
-				<h2 className="!text-title text-danger">
-					Просрочено · {data.expired.total}
-				</h2>
+				<div className="flex flex-wrap items-center justify-between gap-2">
+					<h2 className="!text-title text-danger">Просрочено · {expiredTotal}</h2>
+					{data.autoWrittenOff.items.length > 1 && (
+						<Button
+							size="sm"
+							variant="ghost"
+							disabled={read.isPending}
+							onClick={() =>
+								read.mutate(
+									data.autoWrittenOff.items.map((item) => item.messageId)
+								)
+							}
+						>
+							Скрыть все
+						</Button>
+					)}
+				</div>
 				<ul className="mt-2 max-h-64 overflow-y-auto">
+					{data.autoWrittenOff.items.map((item) => (
+						<AutoWriteOffSignal
+							key={item.messageId}
+							item={item}
+							disabled={read.isPending}
+							onRead={() => read.mutate([item.messageId])}
+						/>
+					))}
 					{data.expired.items.map((batch) => (
 						<BatchSignal key={batch.id} batch={batch} />
 					))}
 				</ul>
-				{!data.expired.total && (
+				{!expiredTotal && (
 					<p className="mt-3 text-caption text-ink-muted">
 						Просроченных остатков нет.
 					</p>
 				)}
-				{data.expired.total > data.limit && (
+				{(data.autoWrittenOff.total > data.limit ||
+					data.expired.total > data.limit) && (
 					<p className="mt-3 text-caption">
-						Показаны первые {data.limit} партий.
+						Показаны первые {data.limit} записей.
 					</p>
 				)}
 			</section>

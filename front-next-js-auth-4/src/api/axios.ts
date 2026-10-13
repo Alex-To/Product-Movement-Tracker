@@ -3,6 +3,7 @@ import authTokenService from '@/services/auth/auth-token.service'
 import authService from '@/services/auth/auth.service'
 import axios, { CreateAxiosDefaults } from 'axios'
 import { getContentType } from './api.helper'
+import { trackServerTime } from './server-clock'
 
 const axiosOptions: CreateAxiosDefaults = {
 	baseURL: API_URL,
@@ -13,6 +14,9 @@ const axiosOptions: CreateAxiosDefaults = {
 export const axiosClassic = axios.create(axiosOptions)
 
 export const instance = axios.create(axiosOptions)
+
+trackServerTime(axiosClassic)
+trackServerTime(instance)
 
 instance.interceptors.request.use(config => {
 	const accessToken = authTokenService.getAccessToken()

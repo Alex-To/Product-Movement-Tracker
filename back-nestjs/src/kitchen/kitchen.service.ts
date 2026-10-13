@@ -10,21 +10,24 @@ import {
 	availableStock,
 	countPortions,
 	inventoryTransaction,
+	OPEN_STOP,
 	refreshAutoStops
 } from '../inventory/availability'
-
-const ORDER_NUMBER_CYCLE = 99
+import { batchStatus, isUsable } from '../inventory/expiry'
+import { loadExpiryPolicy } from '../inventory/policy'
 
 @Injectable()
 export class KitchenService {
 	constructor(private prisma: PrismaService) {}
 
 	async getOrders() {
-		const orders = await this.prisma.order.findMany({
+		return this.prisma.order.findMany({
 			orderBy: [{ createDate: 'desc' }, { id: 'desc' }],
 			take: 50,
 			select: {
 				id: true,
+				// Номер записан в заказ при создании: сквозной круг 1…99
+				number: true,
 				createDate: true,
 				readyAt: true,
 				creater: { select: { name: true } },
@@ -42,24 +45,6 @@ export class KitchenService {
 				}
 			}
 		})
-		if (!orders.length) return []
-
-		// Номер для кухни — порядковый номер заказа по кругу 1…99.
-		// Считаем, сколько заказов было раньше самого старого из показанных
-		const oldest = orders[orders.length - 1]
-		const before = await this.prisma.order.count({
-			where: {
-				OR: [
-					{ createDate: { lt: oldest.createDate } },
-					{ createDate: oldest.createDate, id: { lt: oldest.id } }
-				]
-			}
-		})
-
-		return orders.map((order, index) => ({
-			...order,
-			number: ((before + orders.length - 1 - index) % ORDER_NUMBER_CYCLE) + 1
-		}))
 	}
 	// Повтор нажатия ничего не меняет: время готовности остаётся первым
 	async markOrderReady(orderId: string) {
@@ -80,7 +65,9 @@ export class KitchenService {
 		})
 	}
 	async getProducts() {
-		return this.prisma.product.findMany({
+		const now = new Date()
+		const policy = await loadExpiryPolicy(this.prisma)
+		const products = await this.prisma.product.findMany({
 			orderBy: { nameProduct: 'asc' },
 			select: {
 				id: true,
@@ -88,16 +75,31 @@ export class KitchenService {
 				unit: { select: { name: true } },
 				batches: {
 					where: { count: { gt: 0 } },
-					orderBy: { EXP: 'asc' },
+					// Порядок FEFO, как при списании по заказу
+					orderBy: [{ EXP: 'asc' }, { delivery: { createDate: 'asc' } }, { id: 'asc' }],
 					select: {
 						id: true,
 						count: true,
 						EXP: true,
-						delivery: { select: { number: true } }
+						delivery: { select: { number: true, createDate: true } }
 					}
 				}
 			}
 		})
+		// Статус решает сервер: часы на кухонном планшете могут врать.
+		// Из партий «нельзя готовить» и просроченных кухня не берёт — их списывает менеджер
+		return products.map(product => ({
+			...product,
+			batches: product.batches.map(({ delivery, ...batch }) => {
+				const status = batchStatus(batch.EXP, delivery.createDate, now, policy)
+				return {
+					...batch,
+					delivery: { number: delivery.number },
+					status,
+					expired: status === 'expired'
+				}
+			})
+		}))
 	}
 
 	async getMyWriteOffs(userId: string) {
@@ -128,6 +130,18 @@ export class KitchenService {
 		}
 
 		return inventoryTransaction(this.prisma, async (tx) => {
+			const now = new Date()
+			const policy = await loadExpiryPolicy(tx)
+			const current = await tx.batch.findUnique({
+				where: { id: dto.batchId },
+				select: { EXP: true }
+			})
+			if (!current) throw new NotFoundException('Партия не найдена')
+			if (!isUsable(current.EXP, now, policy))
+				throw new BadRequestException(
+					'Из этой партии уже нельзя готовить — её целиком списывает менеджер'
+				)
+
 			const updated = await tx.batch.updateMany({
 				where: { id: dto.batchId, count: { gte: count } },
 				data: { count: { decrement: count } }
@@ -162,9 +176,12 @@ export class KitchenService {
 				})
 			}
 
-			await refreshAutoStops(tx, {
-				ingredients: { some: { idProduct: batch.idProduct } }
-			})
+			await refreshAutoStops(
+				tx,
+				{ ingredients: { some: { idProduct: batch.idProduct } } },
+				now,
+				policy
+			)
 
 			return movement
 		})
@@ -187,7 +204,7 @@ export class KitchenService {
 							}
 						},
 						stopLists: {
-							where: { type: StopType.MANUAL },
+							where: OPEN_STOP,
 							select: { type: true, creater: { select: { name: true } } }
 						}
 					}
@@ -207,12 +224,14 @@ export class KitchenService {
 									)
 								)
 								.map((item) => item.product.nameProduct),
+							// Открытые записи стоп-листа; авто-стоп без записи — страховка
 							stops: [
 								...dish.stopLists.map((stop) => ({
 									type: stop.type,
 									createrName: stop.creater?.name ?? null
 								})),
-								...(portions === 0
+								...(portions === 0 &&
+								!dish.stopLists.some((stop) => stop.type === StopType.AUTO)
 									? [{ type: StopType.AUTO, createrName: null }]
 									: [])
 							]
@@ -225,21 +244,35 @@ export class KitchenService {
 			{ isolationLevel: 'RepeatableRead' }
 		)
 	}
+	// Открытый ручной стоп у блюда один: Serializable не даст двум нажатиям создать два
 	async setManualStop(dishId: string, userId: string) {
-		const dish = await this.prisma.dish.findUnique({
-			where: { id: dishId, deletedAt: null }
-		})
-		if (!dish) throw new NotFoundException('Блюдо не найдено')
+		return inventoryTransaction(this.prisma, async (tx) => {
+			const dish = await tx.dish.findUnique({
+				where: { id: dishId, deletedAt: null }
+			})
+			if (!dish) throw new NotFoundException('Блюдо не найдено')
 
-		return this.prisma.stopList.upsert({
-			where: { idDish_type: { idDish: dishId, type: StopType.MANUAL } },
-			create: { idDish: dishId, type: StopType.MANUAL, createrId: userId },
-			update: {}
+			const open = await tx.stopList.findFirst({
+				where: { idDish: dishId, type: StopType.MANUAL, ...OPEN_STOP }
+			})
+			return (
+				open ??
+				tx.stopList.create({
+					data: {
+						idDish: dishId,
+						type: StopType.MANUAL,
+						createrId: userId,
+						createdAt: new Date()
+					}
+				})
+			)
 		})
 	}
+	// Стоп снимается, а запись остаётся в истории ещё неделю
 	async removeManualStop(dishId: string) {
-		await this.prisma.stopList.deleteMany({
-			where: { idDish: dishId, type: StopType.MANUAL }
+		await this.prisma.stopList.updateMany({
+			where: { idDish: dishId, type: StopType.MANUAL, ...OPEN_STOP },
+			data: { closedAt: new Date() }
 		})
 		return true
 	}

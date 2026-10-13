@@ -3,5 +3,6 @@ export const MANAGER_ROUTES = {
 	WAREHOUSE: '/manager/warehouse',
 	DISHES: '/manager/dishes',
 	PRODUCTS: '/manager/products',
-	DELIVERIES: '/manager/deliveries'
+	DELIVERIES: '/manager/deliveries',
+	SETTINGS: '/manager/settings'
 } as const

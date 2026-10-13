@@ -12,5 +12,3 @@ export const formatDateTime = (value: string) =>
 		hour: '2-digit',
 		minute: '2-digit'
 	})
-
-export const isExpired = (exp: string) => new Date(exp).getTime() <= Date.now()

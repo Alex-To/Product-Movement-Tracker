@@ -11,6 +11,8 @@ export interface WarehouseProduct {
 	hasExpired: boolean
 	expiring: boolean
 }
+// Решает сервер: просрочена / нельзя готовить (меньше запаса на готовку) / срочная / свежая
+export type BatchStatus = 'expired' | 'unusable' | 'urgent' | 'fresh'
 export interface WarehouseBatch {
 	id: string
 	productId: string
@@ -19,8 +21,8 @@ export interface WarehouseBatch {
 	quantity: string
 	receivedQuantity: string | null
 	expiresAt: string
+	status: BatchStatus
 	expired: boolean
-	remainingSeconds: number
 	fefoRank?: number | null
 	delivery: {
 		id: string
@@ -29,9 +31,17 @@ export interface WarehouseBatch {
 		supplier: { name: string } | null
 	}
 }
+export interface AutoWriteOff {
+	messageId: string
+	writtenOffAt: string
+	quantity: string
+	batch: WarehouseBatch
+}
 export interface WarehouseSignals {
 	expiring: { items: WarehouseBatch[]; total: number }
 	expired: { items: WarehouseBatch[]; total: number }
+	// Партии, которые система списала сама в момент истечения срока
+	autoWrittenOff: { items: AutoWriteOff[]; total: number }
 	stopped: {
 		items: {
 			id: string
@@ -50,6 +60,7 @@ export interface WarehouseBatches {
 	items: WarehouseBatch[]
 	total: number
 	goodCount: number
+	unusableCount: number
 	expiredCount: number
 	page: number
 	pageSize: number
@@ -90,7 +101,15 @@ export const warehouseApi = {
 				`/manager/warehouse/products/${id}/batches`,
 				{ params: { page } }
 			)
-		).data
+		).data,
+	writeOffBatch: async (id: string) =>
+		(
+			await instance.post<{ writtenOff: string }>(
+				`/manager/warehouse/batches/${id}/write-off`
+			)
+		).data,
+	readMessages: async (ids: string[]) =>
+		(await instance.post<{ read: number }>('/manager/warehouse/messages/read', { ids })).data
 }
 export const warehouseDate = (value: string) =>
 	new Date(value).toLocaleString('ru-RU', {
@@ -98,12 +117,14 @@ export const warehouseDate = (value: string) =>
 		timeStyle: 'short'
 	})
 export const warehouseQuantity = (value: string) => value.replace('.', ',')
-export function remainingTime(batch: WarehouseBatch) {
+// «Просрочено» решает сервер; остаток времени — от серверного «сейчас».
+// Срок наступил, а сервер ещё не обновил статус — до ответа показываем «меньше минуты»
+export function remainingTime(batch: WarehouseBatch, now: number) {
 	if (batch.expired) return 'Просрочено'
-	if (batch.remainingSeconds < 60) return 'Меньше минуты'
-	if (batch.remainingSeconds < 3600)
-		return `${Math.floor(batch.remainingSeconds / 60)} мин`
-	if (batch.remainingSeconds < 86400)
-		return `${Math.floor(batch.remainingSeconds / 3600)} ч ${Math.floor((batch.remainingSeconds % 3600) / 60)} мин`
-	return `${Math.floor(batch.remainingSeconds / 86400)} дн ${Math.floor((batch.remainingSeconds % 86400) / 3600)} ч`
+	const seconds = Math.floor((new Date(batch.expiresAt).getTime() - now) / 1000)
+	if (seconds < 60) return 'Меньше минуты'
+	if (seconds < 3600) return `${Math.floor(seconds / 60)} мин`
+	if (seconds < 86400)
+		return `${Math.floor(seconds / 3600)} ч ${Math.floor((seconds % 3600) / 60)} мин`
+	return `${Math.floor(seconds / 86400)} дн ${Math.floor((seconds % 86400) / 3600)} ч`
 }

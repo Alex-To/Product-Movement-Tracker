@@ -1,5 +1,8 @@
 import { Transform, Type } from 'class-transformer'
 import {
+	ArrayMaxSize,
+	ArrayMinSize,
+	IsArray,
 	IsIn,
 	IsInt,
 	IsOptional,
@@ -24,4 +27,11 @@ export class WarehouseQueryDto extends WarehousePageDto {
 	@MaxLength(150)
 	search?: string
 	@IsOptional() @IsIn(['true', 'false']) expiringOnly: string = 'false'
+}
+export class ReadMessagesDto {
+	@IsArray()
+	@ArrayMinSize(1)
+	@ArrayMaxSize(100)
+	@IsString({ each: true })
+	ids: string[]
 }

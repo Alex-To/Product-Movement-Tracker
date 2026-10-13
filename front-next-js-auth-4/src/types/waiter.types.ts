@@ -16,7 +16,7 @@ export interface IMenuDish {
 	}[]
 	stops: TStopType[]
 	missing: string[]
-	expiring: { productName: string; expiresAt: string } | null
+	// Горячее предложение: официант видит только отметку, без объяснения
 	isHot: boolean
 	isStopped: boolean
 }
@@ -34,6 +34,8 @@ export interface IOrderData {
 
 export interface IOrderCreated {
 	id: string
+	// Номер для кухни: сквозной круг 1…99
+	number: number
 	createDate: string
 }
 

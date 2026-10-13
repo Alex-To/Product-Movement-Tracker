@@ -22,6 +22,8 @@ interface Props {
 	total: number
 	// Хватит ли продуктов ещё на порцию с учётом всего чека
 	canAdd: boolean
+	// Сколько ещё порций поместится с учётом уже набранного чека
+	left: number
 	onAdd: () => void
 	onRemove: () => void
 	onExclude: () => void
@@ -33,6 +35,7 @@ export function DishRow({
 	count,
 	total,
 	canAdd,
+	left,
 	onAdd,
 	onRemove,
 	onExclude
@@ -94,7 +97,7 @@ export function DishRow({
 				</span>
 				{!dish.isStopped && (
 					<span className="font-mono text-caption text-ink-muted">
-						Можно: {formatPortions(dish.portions)}
+						Можно: {formatPortions(left)}
 					</span>
 				)}
 			</div>

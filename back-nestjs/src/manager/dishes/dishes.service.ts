@@ -9,6 +9,7 @@ import {
 	availableStock,
 	countPortions,
 	inventoryTransaction,
+	OPEN_STOP,
 	refreshAutoStops
 } from '../../inventory/availability'
 import { PrismaService } from '../../prisma.service'
@@ -40,7 +41,8 @@ const select = {
 			}
 		}
 	},
-	stopLists: { select: { type: true } }
+	// Только открытые записи: снятые стопы — история
+	stopLists: { where: OPEN_STOP, select: { type: true } }
 } satisfies Prisma.DishSelect
 type Dish = Prisma.DishGetPayload<{ select: typeof select }>
 @Injectable()
@@ -144,7 +146,11 @@ export class ManagerDishesService {
 	async trash(id: string, version: number) {
 		return inventoryTransaction(this.prisma, async (tx) => {
 			await this.advance(tx, id, version, false, { deletedAt: new Date() })
-			await tx.stopList.deleteMany({ where: { idDish: id, type: 'AUTO' } })
+			// Блюдо в корзине не считается: авто-стоп закрываем, запись остаётся в истории
+			await tx.stopList.updateMany({
+				where: { idDish: id, type: 'AUTO', ...OPEN_STOP },
+				data: { closedAt: new Date() }
+			})
 			return this.saved(tx, id)
 		})
 	}
@@ -252,7 +258,9 @@ export class ManagerDishesService {
 			deletedAt: dish.deletedAt,
 			image: dish.image,
 			portions,
-			autoStop: !dish.deletedAt && portions === 0,
+			autoStop:
+				!dish.deletedAt &&
+				(portions === 0 || dish.stopLists.some((stop) => stop.type === 'AUTO')),
 			manualStop: dish.stopLists.some((stop) => stop.type === 'MANUAL'),
 			ingredients: dish.ingredients.map((item) => ({
 				productId: item.idProduct,

@@ -1,5 +1,6 @@
 'use client'
 
+import { serverNow } from '@/api/server-clock'
 import { Button } from '@/components/ui/Button'
 import { Loading } from '@/components/ui/PizzaLoader'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -113,7 +114,7 @@ function Workspace({ userId }: { userId: string }) {
 		if (
 			receivedAt &&
 			(!Number.isFinite(new Date(receivedAt).getTime()) ||
-				new Date(receivedAt).getTime() > Date.now())
+				new Date(receivedAt).getTime() > serverNow())
 		)
 			return 'Укажите дату приёма не позднее текущего времени'
 		for (const [index, line] of lines.entries()) {
@@ -123,7 +124,7 @@ function Workspace({ userId }: { userId: string }) {
 			if (
 				!line.expiresAt ||
 				!Number.isFinite(new Date(line.expiresAt).getTime()) ||
-				new Date(line.expiresAt).getTime() <= Date.now()
+				new Date(line.expiresAt).getTime() <= serverNow()
 			)
 				return `Строка ${index + 1}: укажите будущие дату и время годности`
 		}
