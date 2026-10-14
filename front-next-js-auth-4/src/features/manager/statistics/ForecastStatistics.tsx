@@ -27,9 +27,8 @@ export function ForecastStatistics({
 	userId: string
 	expiry?: boolean
 }) {
-	const [days, setDays] = useState(3),
+	const [days, setDays] = useState(14),
 		[includeRejections, setIncludeRejections] = useState(false),
-		[unitId, setUnitId] = useState(''),
 		[search, setSearch] = useState('')
 	const query = useQuery({
 		queryKey: [
@@ -50,11 +49,9 @@ export function ForecastStatistics({
 			(data?.products ?? []).map((item) => [item.unitId, item.unit])
 		).entries()
 	]
-	const selected = units.find(([id]) => id === unitId) ?? units[0]
 	const products = (data?.products ?? [])
 		.filter(
 			(item) =>
-				item.unitId === selected?.[0] &&
 				item.name
 					.toLocaleLowerCase('ru-RU')
 					.includes(search.toLocaleLowerCase('ru-RU')) &&
@@ -92,7 +89,7 @@ export function ForecastStatistics({
 			<div className={`${statisticsCard} mb-5`}>
 				<div className="flex flex-wrap items-center gap-3">
 					<span className="font-semibold">Горизонт прогноза</span>
-					{[1, 3, 7].map((value) => (
+					{[1, 3, 7, 14].map((value) => (
 						<Button
 							key={value}
 							size="sm"
@@ -130,28 +127,28 @@ export function ForecastStatistics({
 					<>
 						<div className="mb-5 rounded-md bg-tint p-4 text-caption text-ink-muted">
 							<p>
-								История спроса: {data.demandDays} дн. — из настроек менеджера.
-								Расчёт на {statisticsDate(data.generatedAt)}, до{' '}
-								{statisticsDate(data.until)} (UTC+3). Запас на приготовление:{' '}
+								История спроса: {data.demandDays} полных завершённых дней — из
+								настроек менеджера. С {statisticsDate(data.historyFrom)} до{' '}
+								{statisticsDate(data.historyUntil)} (не включая границу
+								окончания). Сегодняшние заказы не учитываются; дни без продаж
+								входят в среднее. Расчёт на {statisticsDate(data.generatedAt)},
+								до {statisticsDate(data.until)} (UTC+3). Запас на приготовление:{' '}
 								{data.cookReserveMinutes} мин.
 							</p>
 							<p className="mt-2">
 								Средний расход по текущим рецептам при сохранении спроса и
 								доступности остальных ингредиентов. Общие продукты суммируются
 								по всем блюдам; партии расходуются по ближайшему сроку. Будущие
-								поставки не учитываются.
+								поставки не учитываются. Расчёт по полным рецептам, без
+								исключений ингредиентов в отдельных заказах.
 							</p>
 							<p className="mt-2">
 								Закупка = ожидаемая потребность − количество, которое успеем
 								взять из текущих партий. Прогноз не создаёт заказ поставщику.
-								Для продуктов без наблюдаемого спроса количество не назначается.
+								Для продуктов без наблюдаемого спроса количество не назначается.{' '}
+								Закупка в штуках округляется вверх до целого, в остальных
+								единицах — до трёх знаков.
 							</p>
-							{data.observationHours !== null && data.observationHours < 24 && (
-								<p className="mt-2 text-gold-ink">
-									История короче суток: оценка может сильно меняться после новых
-									заказов.
-								</p>
-							)}
 							{data.observationHours === null && (
 								<p className="mt-2 text-gold-ink">
 									Недостаточно истории по действующим рецептам. Пока показаны
@@ -166,20 +163,6 @@ export function ForecastStatistics({
 						) : (
 							<>
 								<div className="mb-5 flex flex-wrap gap-4">
-									<label className={catalogLabel}>
-										Единица измерения
-										<select
-											className={catalogInput}
-											value={selected?.[0] ?? ''}
-											onChange={(event) => setUnitId(event.target.value)}
-										>
-											{units.map(([id, name]) => (
-												<option key={id} value={id}>
-													{name}
-												</option>
-											))}
-										</select>
-									</label>
 									<label className={`${catalogLabel} flex-1`}>
 										Поиск продукта
 										<input
@@ -191,41 +174,46 @@ export function ForecastStatistics({
 										/>
 									</label>
 								</div>
-								<section className={`${statisticsCard} mb-5`}>
-									<h2 className="mb-4">
-										{expiry
-											? 'Ожидаемый неиспользованный остаток'
-											: 'Рекомендуемая закупка'}
-										, {selected?.[1]}
-									</h2>
-									<p className="mb-4 text-caption text-ink-muted">
-										Первые 10 продуктов с наибольшим количеством. Все значения —
-										в таблице ниже.
-										{expiry &&
-											' Уже просроченные и непригодные для готовки партии показаны отдельно в таблице.'}
-									</p>
-									<StatisticsChart
-										title={
-											expiry ? 'Прогноз просрочки' : 'Рекомендуемая закупка'
-										}
-										timeline={false}
-										legend={[
-											{
-												name: `${expiry ? 'Не успеем использовать' : 'К закупке'}, ${selected?.[1]}`,
-												color: expiry ? 'var(--danger)' : 'var(--gold)'
-											}
-										]}
-										rows={products
-											.filter((product) => product[metric] !== null)
-											.slice(0, 10)
-											.map((product) => ({
-												label: product.name,
-												values: [Number(product[metric])]
-											}))}
-									/>
-								</section>
+								{units
+									.filter(([id]) =>
+										products.some((product) => product.unitId === id)
+									)
+									.map(([id, unit]) => (
+										<section key={id} className={`${statisticsCard} mb-5`}>
+											<h2 className="mb-4">
+												{expiry
+													? 'Ожидаемый неиспользованный остаток'
+													: 'Рекомендуемая закупка'}
+												, {unit}
+											</h2>
+											<p className="mb-4 text-caption text-ink-muted">
+												Первые 10 продуктов с наибольшим количеством. Все
+												значения — в таблице ниже.
+												{expiry &&
+													' Уже просроченные и непригодные для готовки партии показаны отдельно в таблице.'}
+											</p>
+											<StatisticsChart
+												title={`${expiry ? 'Прогноз просрочки' : 'Рекомендуемая закупка'}, ${unit}`}
+												timeline={false}
+												legend={[
+													{
+														name: `${expiry ? 'Не успеем использовать' : 'К закупке'}, ${unit}`,
+														color: expiry ? 'var(--danger)' : 'var(--gold)'
+													}
+												]}
+												rows={products
+													.filter((product) => product.unitId === id)
+													.filter((product) => product[metric] !== null)
+													.slice(0, 10)
+													.map((product) => ({
+														label: product.name,
+														values: [Number(product[metric])]
+													}))}
+											/>
+										</section>
+									))}
 								<section className={statisticsCard}>
-									<h2 className="mb-4">Продукты, {selected?.[1]}</h2>
+									<h2 className="mb-4">Продукты</h2>
 									<div className="overflow-auto">
 										<table className="w-full text-left text-caption">
 											<thead className="border-b border-border text-ink-muted">
@@ -324,6 +312,7 @@ export function ForecastStatistics({
 																className="px-3 py-3 tabular-nums"
 															>
 																{quantity(value)}
+																{value !== null && ` ${product.unit}`}
 															</td>
 														))}
 													</tr>
@@ -334,7 +323,7 @@ export function ForecastStatistics({
 									{!products.length && (
 										<p className="py-5 text-ink-muted">
 											{expiry
-												? 'Нет партий с риском по срокам в выбранной группе.'
+												? 'Нет партий с риском по срокам по выбранным условиям.'
 												: 'Нет продуктов по выбранным условиям.'}
 										</p>
 									)}

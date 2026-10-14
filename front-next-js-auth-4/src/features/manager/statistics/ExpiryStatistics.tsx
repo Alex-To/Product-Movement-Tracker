@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { Fragment, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Button } from '@/components/ui/Button'
 import { Loading } from '@/components/ui/PizzaLoader'
@@ -7,20 +7,18 @@ import { managerError } from '../api/manager.api'
 import { catalogInput, catalogLabel } from '../products/styles'
 import { restaurantToday, shiftDate } from './statistics.api'
 import { StatisticsChart } from './StatisticsChart'
-import { ForecastStatistics } from './ForecastStatistics'
 import {
 	quantity,
 	statisticsCard,
 	stockStatisticsApi
 } from './stock-statistics.api'
 
-function ExpiryHistory({ userId }: { userId: string }) {
+export function ExpiryStatistics({ userId }: { userId: string }) {
 	const [period, setPeriod] = useState(() => {
 		const to = restaurantToday()
 		return { from: shiftDate(to, -6), to }
 	})
 	const [draft, setDraft] = useState(period),
-		[unitId, setUnitId] = useState(''),
 		[timeline, setTimeline] = useState(false),
 		[error, setError] = useState('')
 	const query = useQuery({
@@ -35,8 +33,7 @@ function ExpiryHistory({ userId }: { userId: string }) {
 		queryFn: ({ signal }) => stockStatisticsApi.expiry(period, signal),
 		retry: false
 	})
-	const data = query.data,
-		unit = data?.units.find((item) => item.id === unitId) ?? data?.units[0]
+	const data = query.data
 	const values = (row: {
 		auto: string
 		manualExpired: string
@@ -136,165 +133,122 @@ function ExpiryHistory({ userId }: { userId: string }) {
 							Операций: {data.movements}. Партий: {data.batches}. Единицы
 							измерения считаются отдельно.
 						</p>
-						{!unit ? (
+						{!data.units.length ? (
 							<p className={statisticsCard}>
 								За выбранный период списаний нет.
 							</p>
 						) : (
-							<>
-								<label className={`${catalogLabel} mb-5 max-w-xs`}>
-									Единица измерения
-									<select
-										className={catalogInput}
-										value={unit.id}
-										onChange={(event) => setUnitId(event.target.value)}
-									>
-										{data.units.map((item) => (
-											<option key={item.id} value={item.id}>
-												{item.name}
-											</option>
-										))}
-									</select>
-								</label>
-								<section className={`${statisticsCard} mb-5`}>
-									<div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-										<h2>Списания, {unit.name}</h2>
-										<div className="flex gap-2">
-											<Button
-												size="sm"
-												variant={timeline ? 'secondary' : 'primary'}
-												aria-pressed={!timeline}
-												onClick={() => setTimeline(false)}
-											>
-												По продуктам
-											</Button>
-											<Button
-												size="sm"
-												variant={timeline ? 'primary' : 'secondary'}
-												aria-pressed={timeline}
-												onClick={() => setTimeline(true)}
-											>
-												По времени
-											</Button>
+							data.units.map((unit) => (
+								<Fragment key={unit.id}>
+									<section className={`${statisticsCard} mb-5`}>
+										<div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+											<h2>Списания, {unit.name}</h2>
+											<div className="flex gap-2">
+												<Button
+													size="sm"
+													variant={timeline ? 'secondary' : 'primary'}
+													aria-pressed={!timeline}
+													onClick={() => setTimeline(false)}
+												>
+													По продуктам
+												</Button>
+												<Button
+													size="sm"
+													variant={timeline ? 'primary' : 'secondary'}
+													aria-pressed={timeline}
+													onClick={() => setTimeline(true)}
+												>
+													По времени
+												</Button>
+											</div>
 										</div>
-									</div>
-									{!timeline && (
-										<p className="mb-3 text-caption text-ink-muted">
-											Первые 10 продуктов по автосписанию. Все продукты — в
-											таблице.
-										</p>
-									)}
-									<StatisticsChart
-										title="История списаний"
-										timeline={timeline}
-										legend={[
-											{
-												name: 'Автосписание просрочки',
-												color: 'var(--danger)'
-											},
-											{ name: 'Ручное после срока', color: 'var(--gold)' },
-											{ name: 'Прочее ручное', color: 'var(--ink-muted)' }
-										]}
-										rows={
-											timeline
-												? unit.series.map((row) => ({
-														label:
-															data.period.bucket === 'hour'
-																? row.key
-																: `${row.key.slice(8)}.${row.key.slice(5, 7)}`,
-														values: values(row)
-													}))
-												: unit.products
-														.slice(0, 10)
-														.map((row) => ({
+										{!timeline && (
+											<p className="mb-3 text-caption text-ink-muted">
+												Первые 10 продуктов по автосписанию. Все продукты — в
+												таблице.
+											</p>
+										)}
+										<StatisticsChart
+											title={`История списаний, ${unit.name}`}
+											timeline={timeline}
+											legend={[
+												{
+													name: 'Автосписание просрочки',
+													color: 'var(--danger)'
+												},
+												{ name: 'Ручное после срока', color: 'var(--gold)' },
+												{ name: 'Прочее ручное', color: 'var(--ink-muted)' }
+											]}
+											rows={
+												timeline
+													? unit.series.map((row) => ({
+															label:
+																data.period.bucket === 'hour'
+																	? row.key
+																	: `${row.key.slice(8)}.${row.key.slice(5, 7)}`,
+															values: values(row)
+														}))
+													: unit.products.slice(0, 10).map((row) => ({
 															label: row.name,
 															values: values(row)
 														}))
-										}
-									/>
-								</section>
-								<section className={statisticsCard}>
-									<h2 className="mb-4">Точные значения, {unit.name}</h2>
-									<div className="max-h-[600px] overflow-auto">
-										<table className="w-full text-left text-caption">
-											<thead className="border-b border-border text-ink-muted">
-												<tr>
-													{[
-														timeline ? 'Период' : 'Продукт',
-														'Автосписание',
-														'Ручное после срока',
-														'Прочее ручное'
-													].map((label) => (
-														<th
-															key={label}
-															scope="col"
-															className="px-3 py-3 font-semibold"
-														>
-															{label}
-														</th>
-													))}
-												</tr>
-											</thead>
-											<tbody>
-												{(timeline
-													? unit.series.map((row) => ({
-															...row,
-															id: row.key,
-															name: row.key
-														}))
-													: unit.products
-												).map((row) => (
-													<tr key={row.id} className="border-b border-border">
-														<th scope="row" className="px-3 py-3 font-normal">
-															{row.name}
-														</th>
-														{values(row).map((value, index) => (
-															<td
-																key={index}
-																className="px-3 py-3 tabular-nums"
+											}
+										/>
+									</section>
+									<section className={statisticsCard}>
+										<h2 className="mb-4">Точные значения, {unit.name}</h2>
+										<div className="max-h-[600px] overflow-auto">
+											<table className="w-full text-left text-caption">
+												<thead className="border-b border-border text-ink-muted">
+													<tr>
+														{[
+															timeline ? 'Период' : 'Продукт',
+															'Автосписание',
+															'Ручное после срока',
+															'Прочее ручное'
+														].map((label) => (
+															<th
+																key={label}
+																scope="col"
+																className="px-3 py-3 font-semibold"
 															>
-																{quantity(value)}
-															</td>
+																{label}
+															</th>
 														))}
 													</tr>
-												))}
-											</tbody>
-										</table>
-									</div>
-								</section>
-							</>
+												</thead>
+												<tbody>
+													{(timeline
+														? unit.series.map((row) => ({
+																...row,
+																id: row.key,
+																name: row.key
+															}))
+														: unit.products
+													).map((row) => (
+														<tr key={row.id} className="border-b border-border">
+															<th scope="row" className="px-3 py-3 font-normal">
+																{row.name}
+															</th>
+															{values(row).map((value, index) => (
+																<td
+																	key={index}
+																	className="px-3 py-3 tabular-nums"
+																>
+																	{quantity(value)}
+																</td>
+															))}
+														</tr>
+													))}
+												</tbody>
+											</table>
+										</div>
+									</section>
+								</Fragment>
+							))
 						)}
 					</>
 				)
-			)}
-		</>
-	)
-}
-
-export function ExpiryStatistics({ userId }: { userId: string }) {
-	const [forecast, setForecast] = useState(false)
-	return (
-		<>
-			<div className="mb-5 flex gap-3">
-				<Button
-					variant={forecast ? 'secondary' : 'primary'}
-					aria-pressed={!forecast}
-					onClick={() => setForecast(false)}
-				>
-					История
-				</Button>
-				<Button
-					variant={forecast ? 'primary' : 'secondary'}
-					aria-pressed={forecast}
-					onClick={() => setForecast(true)}
-				>
-					Прогноз
-				</Button>
-			</div>
-			{forecast ? (
-				<ForecastStatistics userId={userId} expiry />
-			) : (
-				<ExpiryHistory userId={userId} />
 			)}
 		</>
 	)

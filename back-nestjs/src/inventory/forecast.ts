@@ -13,7 +13,8 @@ export function forecastProduct(
 	ratePerHour: Prisma.Decimal | null,
 	now: Date,
 	days: number,
-	policy: ExpiryPolicy
+	policy: ExpiryPolicy,
+	unitName = ''
 ) {
 	const end = now.getTime() + days * 24 * HOUR_MS
 	let usable = zero(),
@@ -75,8 +76,19 @@ export function forecastProduct(
 			demand === null
 				? null
 				: Prisma.Decimal.max(0, demand.minus(consumed))
-						.toDecimalPlaces(3, Prisma.Decimal.ROUND_UP)
+						// Remove repeating-division noise before rounding up for purchase.
+						.toDecimalPlaces(9, Prisma.Decimal.ROUND_HALF_UP)
+						.toDecimalPlaces(
+							isPieceUnit(unitName) ? 0 : 3,
+							Prisma.Decimal.ROUND_UP
+						)
 						.toFixed(3),
 		batches: details
 	}
+}
+
+export function isPieceUnit(name: string) {
+	return ['шт', 'шт.', 'штука', 'штуки', 'штук'].includes(
+		name.trim().toLocaleLowerCase('ru-RU')
+	)
 }

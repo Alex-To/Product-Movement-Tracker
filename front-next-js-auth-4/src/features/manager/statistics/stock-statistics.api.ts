@@ -31,6 +31,8 @@ export type Forecast = {
 	until: string
 	days: number
 	demandDays: number
+	historyFrom: string
+	historyUntil: string
 	observationHours: number | null
 	includeRejections: boolean
 	cookReserveMinutes: number

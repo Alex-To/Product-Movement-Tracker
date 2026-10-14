@@ -20,6 +20,39 @@ const batch = (id: string, quantity: number, hours: number): FefoBatch => ({
 })
 
 describe('product forecast', () => {
+	it('does not turn repeating hourly division into an extra purchase unit', () => {
+		for (const unit of ['кг', 'шт']) {
+			expect(
+				forecastProduct([], decimal(7).div(24), now, 14, policy, unit).toOrder
+			).toBe('98.000')
+		}
+		expect(
+			forecastProduct([], decimal('7.000001').div(24), now, 14, policy, 'шт')
+				.toOrder
+		).toBe('99.000')
+	})
+	it('rounds piece procurement up while preserving fractional recipe demand', () => {
+		const result = forecastProduct([], decimal('0.8'), now, 1, policy, 'шт')
+		expect(result.demand).toBe('19.200')
+		expect(result.toOrder).toBe('20.000')
+		expect(
+			forecastProduct([], decimal('0.8'), now, 1, policy, 'кг').toOrder
+		).toBe('19.200')
+		expect(
+			forecastProduct([], decimal('0.8'), now, 1, policy, ' ШТ. ').toOrder
+		).toBe('20.000')
+	})
+	it('does not order eggs when 400 cover two weeks of 200 per week', () => {
+		const result = forecastProduct(
+			[batch('eggs', 400, 24 * 20)],
+			decimal(200).div(7 * 24),
+			now,
+			14,
+			policy,
+			'шт'
+		)
+		expect(result.toOrder).toBe('0.000')
+	})
 	it('uses FEFO and subtracts the cooking reserve before estimating losses', () => {
 		const result = forecastProduct(
 			[batch('later', 20, 240), batch('soon', 10, 2)],

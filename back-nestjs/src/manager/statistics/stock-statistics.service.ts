@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { Prisma } from '@prisma/client'
 import { PrismaService } from '../../prisma.service'
-import { collectDemand, DemandEvent } from '../../inventory/demand'
+import { DemandEvent } from '../../inventory/demand'
 import { expiryPolicy, HOUR_MS } from '../../inventory/expiry'
 import { forecastProduct } from '../../inventory/forecast'
 import { DEFAULT_SETTINGS } from '../../settings/settings.defaults'
@@ -20,9 +20,16 @@ export class StockStatisticsService {
 				const settings =
 					(await tx.settings.findUnique({ where: { id: 1 } })) ??
 					DEFAULT_SETTINGS
-				const since = new Date(
-					now.getTime() - settings.demandDays * 24 * HOUR_MS
-				)
+				const [history] = await tx.$queryRaw<
+					Array<{ from: Date; until: Date }>
+				>`
+					WITH boundary AS (
+						SELECT (CAST(${now.toISOString()} AS timestamptz) AT TIME ZONE ${STATISTICS_TIME_ZONE})::date AS today
+					)
+					SELECT ((today - ${settings.demandDays}::integer)::timestamp AT TIME ZONE ${STATISTICS_TIME_ZONE}) AT TIME ZONE 'UTC' AS "from",
+					       (today::timestamp AT TIME ZONE ${STATISTICS_TIME_ZONE}) AT TIME ZONE 'UTC' AS until
+					FROM boundary
+				`
 				const products = await tx.product.findMany({
 					orderBy: [{ nameProduct: 'asc' }, { id: 'asc' }],
 					include: {
@@ -46,7 +53,7 @@ export class StockStatisticsService {
 				const items = await tx.orderItem.findMany({
 					where: {
 						idDish: { in: [...active] },
-						order: { createDate: { gte: since, lte: now } }
+						order: { createDate: { gte: history.from, lt: history.until } }
 					},
 					select: {
 						idDish: true,
@@ -63,7 +70,7 @@ export class StockStatisticsService {
 					const refused = await tx.orderRejection.findMany({
 						where: {
 							reason: { in: ['STOP_LIST', 'SHORTAGE'] },
-							createDate: { gte: since, lte: now }
+							createDate: { gte: history.from, lt: history.until }
 						},
 						select: { lines: true, createDate: true }
 					})
@@ -87,17 +94,22 @@ export class StockStatisticsService {
 									})
 							}
 				}
-				const demand = collectDemand(events, since, now)
+				const portionsByDish = new Map<string, number>()
+				for (const event of events)
+					if (event.portions > 0)
+						portionsByDish.set(
+							event.dishId,
+							(portionsByDish.get(event.dishId) ?? 0) + event.portions
+						)
+				const periodHours = settings.demandDays * 24
 				const rates = new Map<string, Prisma.Decimal>()
 				// Unlike hot-offer ranking, procurement does not invent a sale for unseen dishes.
 				// Current recipes convert observed portions into a shared product demand.
 				for (const dish of dishes) {
-					const portions = demand?.portions.get(dish.id)
-					if (!demand || !portions) continue
+					const portions = portionsByDish.get(dish.id)
+					if (!portions) continue
 					for (const ingredient of dish.ingredients) {
-						const amount = ingredient.count
-							.mul(portions)
-							.div(demand.periodHours)
+						const amount = ingredient.count.mul(portions).div(periodHours)
 						rates.set(
 							ingredient.idProduct,
 							(rates.get(ingredient.idProduct) ?? new Prisma.Decimal(0)).plus(
@@ -113,7 +125,9 @@ export class StockStatisticsService {
 					).toISOString(),
 					days: query.days,
 					demandDays: settings.demandDays,
-					observationHours: demand?.periodHours ?? null,
+					observationHours: portionsByDish.size ? periodHours : null,
+					historyFrom: history.from.toISOString(),
+					historyUntil: history.until.toISOString(),
 					includeRejections: query.includeRejections === 'true',
 					cookReserveMinutes: settings.cookReserveMinutes,
 					products: products.map((product) => ({
@@ -132,7 +146,8 @@ export class StockStatisticsService {
 							rates.get(product.id) ?? null,
 							now,
 							query.days,
-							expiryPolicy(settings)
+							expiryPolicy(settings),
+							product.unit.name
 						)
 					}))
 				}
