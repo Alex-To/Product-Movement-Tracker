@@ -116,7 +116,7 @@ export const warehouseDate = (value: string) =>
 		dateStyle: 'short',
 		timeStyle: 'short'
 	})
-export const warehouseQuantity = (value: string) => value.replace('.', ',')
+export const warehouseQuantity = (value: string | number) => String(value).replace('.', ',')
 // «Просрочено» решает сервер; остаток времени — от серверного «сейчас».
 // Срок наступил, а сервер ещё не обновил статус — до ответа показываем «меньше минуты»
 export function remainingTime(batch: WarehouseBatch, now: number) {

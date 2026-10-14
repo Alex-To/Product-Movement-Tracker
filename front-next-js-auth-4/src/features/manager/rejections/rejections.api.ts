@@ -17,7 +17,7 @@ export interface OrderRejection {
 	lines: { dishName: string; count: number; excluded: string[] }[]
 	details: {
 		stopped?: string[]
-		shortages?: { productName: string; unit: string; need: string; available: string }[]
+		shortages?: { productName: string; unit: string; need: string | number; available: string | number }[]
 	}
 }
 

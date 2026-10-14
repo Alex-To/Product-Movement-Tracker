@@ -4,5 +4,6 @@ export const MANAGER_ROUTES = {
 	DISHES: '/manager/dishes',
 	PRODUCTS: '/manager/products',
 	DELIVERIES: '/manager/deliveries',
-	SETTINGS: '/manager/settings'
+	SETTINGS: '/manager/settings',
+	STATISTICS: '/manager/statistics'
 } as const

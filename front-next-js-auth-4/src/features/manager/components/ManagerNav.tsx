@@ -16,6 +16,7 @@ export function ManagerNav() {
 			homeHref={MANAGER_ROUTES.HOME}
 			tabsLabel="Разделы менеджера"
 			tabs={[
+				{ href: MANAGER_ROUTES.STATISTICS, label: 'Статистика', isActive: pathname.startsWith(MANAGER_ROUTES.STATISTICS) },
 				{ href: MANAGER_ROUTES.WAREHOUSE, label: 'Склад', isActive: pathname === MANAGER_ROUTES.WAREHOUSE },
 				{ href: MANAGER_ROUTES.DISHES, label: 'Блюда и рецептуры', isActive: pathname.startsWith(MANAGER_ROUTES.DISHES) },
 				{ href: MANAGER_ROUTES.DELIVERIES, label: 'Поставки', isActive: pathname.startsWith(MANAGER_ROUTES.DELIVERIES) },

@@ -10,9 +10,13 @@ import { ManagerRejectionsController } from './rejections/rejections.controller'
 import { ManagerRejectionsService } from './rejections/rejections.service'
 import { ManagerWarehouseController } from './warehouse/warehouse.controller'
 import { ManagerWarehouseService } from './warehouse/warehouse.service'
+import { ManagerStatisticsController } from './statistics/statistics.controller'
+import { ManagerStatisticsService } from './statistics/statistics.service'
+import { StockStatisticsController } from './statistics/stock-statistics.controller'
+import { StockStatisticsService } from './statistics/stock-statistics.service'
 
 @Module({
-	controllers: [ManagerCatalogController, ManagerDeliveriesController, ManagerDishesController, ManagerRejectionsController, ManagerWarehouseController],
-	providers: [ManagerCatalogService, ManagerDeliveriesService, ManagerDishesService, ManagerRejectionsService, ManagerWarehouseService, PrismaService]
+	controllers: [ManagerCatalogController, ManagerDeliveriesController, ManagerDishesController, ManagerRejectionsController, ManagerWarehouseController, ManagerStatisticsController, StockStatisticsController],
+	providers: [ManagerCatalogService, ManagerDeliveriesService, ManagerDishesService, ManagerRejectionsService, ManagerWarehouseService, ManagerStatisticsService, StockStatisticsService, PrismaService]
 })
 export class ManagerModule {}
