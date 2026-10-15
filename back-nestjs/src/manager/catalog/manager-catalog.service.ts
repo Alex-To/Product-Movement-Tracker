@@ -13,7 +13,7 @@ const PRODUCT_SELECT = {
 	id: true,
 	nameProduct: true,
 	unit: { select: { id: true, name: true } },
-	_count: { select: { batches: true, dishIngredients: true } }
+	_count: { select: { batches: true, dishIngredients: true, externalRequestLines: true } }
 } satisfies Prisma.ProductSelect
 
 type CatalogProduct = Prisma.ProductGetPayload<{ select: typeof PRODUCT_SELECT }>
@@ -138,8 +138,8 @@ export class ManagerCatalogService {
 				await tx.$queryRaw`SELECT id_product FROM products WHERE id_product = ${id} FOR UPDATE`
 				const current = await tx.product.findUnique({ where: { id }, select: PRODUCT_SELECT })
 				if (!current) throw new NotFoundException('Продукт не найден')
-				if (current.unit.id !== dto.unitId && (current._count.batches || current._count.dishIngredients)) {
-					throw new ConflictException({ code: 'PRODUCT_UNIT_LOCKED', message: 'Нельзя менять единицу: у продукта уже есть партии или он используется в рецептах' })
+				if (current.unit.id !== dto.unitId && (current._count.batches || current._count.dishIngredients || current._count.externalRequestLines)) {
+					throw new ConflictException({ code: 'PRODUCT_UNIT_LOCKED', message: 'Нельзя менять единицу: у продукта уже есть партии, рецепты или внешние заявки' })
 				}
 				await this.requireUnit(tx, dto.unitId)
 				const product = await tx.product.update({
@@ -159,15 +159,15 @@ export class ManagerCatalogService {
 				await tx.$queryRaw`SELECT id_product FROM products WHERE id_product = ${id} FOR UPDATE`
 				const product = await tx.product.findUnique({ where: { id }, select: PRODUCT_SELECT })
 				if (!product) throw new NotFoundException('Продукт не найден')
-				if (product._count.batches || product._count.dishIngredients) {
-					throw new ConflictException({ code: 'PRODUCT_IN_USE', message: 'Нельзя удалить продукт: у него есть партии или он используется в рецептах' })
+				if (product._count.batches || product._count.dishIngredients || product._count.externalRequestLines) {
+					throw new ConflictException({ code: 'PRODUCT_IN_USE', message: 'Нельзя удалить продукт: у него есть партии, рецепты или внешние заявки' })
 				}
 				await tx.product.delete({ where: { id } })
 			})
 		} catch (error) {
 			if (this.isPrismaError(error, 'P2025')) throw new NotFoundException('Продукт не найден')
 			if (this.isPrismaError(error, 'P2003')) {
-				throw new ConflictException({ code: 'PRODUCT_IN_USE', message: 'Нельзя удалить продукт: у него есть партии или он используется в рецептах' })
+				throw new ConflictException({ code: 'PRODUCT_IN_USE', message: 'Нельзя удалить продукт: у него есть партии, рецепты или внешние заявки' })
 			}
 			throw error
 		}
@@ -180,7 +180,7 @@ export class ManagerCatalogService {
 	}
 
 	private presentProduct(product: CatalogProduct) {
-		const inUse = product._count.batches > 0 || product._count.dishIngredients > 0
+		const inUse = product._count.batches > 0 || product._count.dishIngredients > 0 || product._count.externalRequestLines > 0
 		return {
 			id: product.id, name: product.nameProduct, unit: product.unit,
 			batchesCount: product._count.batches, dishesCount: product._count.dishIngredients,

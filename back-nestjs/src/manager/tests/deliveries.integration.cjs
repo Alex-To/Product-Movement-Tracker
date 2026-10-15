@@ -48,7 +48,10 @@ async function run() {
 		users[role] = await prisma.user.create({
 			data: { login: role.toLowerCase(), name: role, role, password: 'unused' }
 		})
-		tokens[role] = jwt.sign({ id: users[role].id, role }, { expiresIn: '10m' })
+		tokens[role] = jwt.sign(
+			{ id: users[role].id, role, type: 'access' },
+			{ expiresIn: '10m' }
+		)
 	}
 	const call = async (
 		method,
@@ -181,7 +184,9 @@ async function run() {
 	})
 	const received = await call('post', '/deliveries', data, 201)
 	assert.equal(
-		await prisma.stopList.count({ where: { idDish: dish.id, type: 'AUTO' } }),
+		await prisma.stopList.count({
+			where: { idDish: dish.id, type: 'AUTO', closedAt: null }
+		}),
 		0
 	)
 	assert.equal(
@@ -227,7 +232,10 @@ async function run() {
 	)
 	const replay = await call('post', '/deliveries', data, 201)
 	assert.equal(replay.id, received.id)
-	assert.equal(await prisma.batch.count({ where: { idDelivery: received.id } }), 3)
+	assert.equal(
+		await prisma.batch.count({ where: { idDelivery: received.id } }),
+		3
+	)
 	await call('post', '/deliveries', { ...data, number: 'changed' }, 409)
 	await call('post', '/deliveries', { ...data, requestId: randomUUID() }, 409)
 	const differentSupplier = await call(
@@ -338,7 +346,7 @@ async function run() {
 	)
 	assert.equal(
 		await prisma.stopList.count({
-			where: { idDish: raceDish.id, type: 'AUTO' }
+			where: { idDish: raceDish.id, type: 'AUTO', closedAt: null }
 		}),
 		0
 	)
@@ -354,7 +362,7 @@ async function run() {
 }
 run()
 	.catch((error) => {
-		console.error(error.message)
+		console.error(error)
 		process.exitCode = 1
 	})
 	.finally(async () => {

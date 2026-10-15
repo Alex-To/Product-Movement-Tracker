@@ -1,0 +1,170 @@
+{
+  "_type": "export",
+  "__export_format": 4,
+  "__export_date": "2026-10-15T13:58:23.885Z",
+  "__export_source": "product-movement-tracker",
+  "resources": [
+    {
+      "_id": "wrk_external_interfaces",
+      "_type": "workspace",
+      "name": "Внешние интерфейсы — поставки",
+      "description": "Постоянный ключ создаётся у менеджера. Заполните окружение: api_key, supplier_id, product_id, unit_id. Для новой заявки изменяйте submission_id и invoice_number.",
+      "scope": "collection"
+    },
+    {
+      "_id": "env_external_interfaces",
+      "_type": "environment",
+      "parentId": "wrk_external_interfaces",
+      "name": "Base Environment",
+      "data": {
+        "base_url": "http://localhost:4200/api",
+        "api_key": "",
+        "supplier_id": "",
+        "product_id": "",
+        "unit_id": "",
+        "submission_id": "cf8b5c18-64bb-4ef3-8e46-3e8fc5b47924",
+        "invoice_number": "EXT-TEST-001",
+        "expires_at": "2030-12-01T18:00:00+03:00",
+        "external_request_id": ""
+      },
+      "dataPropertyOrder": null,
+      "color": null,
+      "isPrivate": false
+    },
+    {
+      "_id": "req_external_products",
+      "_type": "request",
+      "parentId": "wrk_external_interfaces",
+      "name": "1. Продукты и единицы",
+      "method": "GET",
+      "url": "{{ _.base_url }}/external/v1/products?page=1",
+      "headers": [
+        {
+          "name": "X-API-Key",
+          "value": "{{ _.api_key }}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {},
+      "parameters": [],
+      "authentication": {},
+      "description": "API-ключ используется многократно. Без ключа запрос вернёт 401."
+    },
+    {
+      "_id": "req_external_suppliers",
+      "_type": "request",
+      "parentId": "wrk_external_interfaces",
+      "name": "2. Поставщики",
+      "method": "GET",
+      "url": "{{ _.base_url }}/external/v1/suppliers?page=1",
+      "headers": [
+        {
+          "name": "X-API-Key",
+          "value": "{{ _.api_key }}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {},
+      "parameters": [],
+      "authentication": {},
+      "description": "API-ключ используется многократно. Без ключа запрос вернёт 401."
+    },
+    {
+      "_id": "req_external_submit",
+      "_type": "request",
+      "parentId": "wrk_external_interfaces",
+      "name": "3. Отправить заявку — три партии",
+      "method": "POST",
+      "url": "{{ _.base_url }}/external/v1/delivery-requests",
+      "headers": [
+        {
+          "name": "X-API-Key",
+          "value": "{{ _.api_key }}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"requestId\": \"{{ _.submission_id }}\",\n  \"supplierId\": \"{{ _.supplier_id }}\",\n  \"number\": \"{{ _.invoice_number }}\",\n  \"lines\": [\n    {\n      \"productId\": \"{{ _.product_id }}\",\n      \"unitId\": \"{{ _.unit_id }}\",\n      \"quantity\": \"10.000\",\n      \"expiresAt\": \"{{ _.expires_at }}\"\n    },\n    {\n      \"productId\": \"{{ _.product_id }}\",\n      \"unitId\": \"{{ _.unit_id }}\",\n      \"quantity\": \"5.500\",\n      \"expiresAt\": \"{{ _.expires_at }}\"\n    },\n    {\n      \"productId\": \"{{ _.product_id }}\",\n      \"unitId\": \"{{ _.unit_id }}\",\n      \"quantity\": \"2.000\",\n      \"expiresAt\": \"{{ _.expires_at }}\"\n    }\n  ]\n}"
+      },
+      "parameters": [],
+      "authentication": {},
+      "description": "API-ключ используется многократно. Без ключа запрос вернёт 401."
+    },
+    {
+      "_id": "req_external_list",
+      "_type": "request",
+      "parentId": "wrk_external_interfaces",
+      "name": "4. Заявки этого интерфейса",
+      "method": "GET",
+      "url": "{{ _.base_url }}/external/v1/delivery-requests?page=1",
+      "headers": [
+        {
+          "name": "X-API-Key",
+          "value": "{{ _.api_key }}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {},
+      "parameters": [],
+      "authentication": {},
+      "description": "API-ключ используется многократно. Без ключа запрос вернёт 401."
+    },
+    {
+      "_id": "req_external_pending",
+      "_type": "request",
+      "parentId": "wrk_external_interfaces",
+      "name": "5. Ожидающие заявки",
+      "method": "GET",
+      "url": "{{ _.base_url }}/external/v1/delivery-requests?status=PENDING&page=1",
+      "headers": [
+        {
+          "name": "X-API-Key",
+          "value": "{{ _.api_key }}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {},
+      "parameters": [],
+      "authentication": {},
+      "description": "API-ключ используется многократно. Без ключа запрос вернёт 401."
+    },
+    {
+      "_id": "req_external_detail",
+      "_type": "request",
+      "parentId": "wrk_external_interfaces",
+      "name": "6. Состав и решение менеджера",
+      "method": "GET",
+      "url": "{{ _.base_url }}/external/v1/delivery-requests/{{ _.external_request_id }}",
+      "headers": [
+        {
+          "name": "X-API-Key",
+          "value": "{{ _.api_key }}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {},
+      "parameters": [],
+      "authentication": {},
+      "description": "API-ключ используется многократно. Без ключа запрос вернёт 401."
+    }
+  ]
+}

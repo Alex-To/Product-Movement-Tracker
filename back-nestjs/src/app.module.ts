@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common'
+import { ExternalModule } from './external/external.module'
 import { ConfigModule } from '@nestjs/config'
 import { AdminModule } from './admin/admin.module'
 import { AuthModule } from './auth/auth.module'
@@ -11,6 +12,7 @@ import { WaiterModule } from './waiter/waiter.module'
 
 @Module({
 	imports: [
+		ExternalModule,
 		ConfigModule.forRoot({
 			isGlobal: true
 		}),

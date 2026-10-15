@@ -4,6 +4,7 @@ export const MANAGER_ROUTES = {
 	DISHES: '/manager/dishes',
 	PRODUCTS: '/manager/products',
 	DELIVERIES: '/manager/deliveries',
+	EXTERNAL_INTERFACES: '/manager/external-interfaces',
 	SETTINGS: '/manager/settings',
 	STATISTICS: '/manager/statistics'
 } as const
