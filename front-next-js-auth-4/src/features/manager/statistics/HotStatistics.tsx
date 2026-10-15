@@ -12,6 +12,7 @@ import {
 	statisticsDate,
 	stockStatisticsApi
 } from './stock-statistics.api'
+import { formatManualHotUntil } from '../dishes/manual-hot-time'
 
 export function HotStatistics({ userId }: { userId: string }) {
 	const query = useQuery({
@@ -38,6 +39,12 @@ export function HotStatistics({ userId }: { userId: string }) {
 					>
 						Настроить горячие предложения
 					</Link>
+					<Link
+						className="ml-4 mt-2 inline-block font-semibold text-gold-ink underline"
+						href={MANAGER_ROUTES.DISHES}
+					>
+						Назначить вручную в каталоге
+					</Link>
 				</div>
 				<Button
 					variant="secondary"
@@ -48,8 +55,8 @@ export function HotStatistics({ userId }: { userId: string }) {
 				</Button>
 			</div>
 			<p className="mb-5 text-caption text-ink-muted">
-				Блюда, которые помогают использовать срочные партии. Приоритет учитывает
-				сроки, остатки и спрос; в списке только доступные блюда.
+				Ручные назначения менеджера и автоматические предложения по срокам,
+				остаткам и спросу. В списке только доступные блюда; ручные идут первыми.
 			</p>
 			{query.isPending ? (
 				<Loading label="Загрузка горячих предложений…" />
@@ -61,8 +68,9 @@ export function HotStatistics({ userId }: { userId: string }) {
 				data && (
 					<>
 						<p className="mb-4 text-caption text-ink-muted">
-							Лимит: {data.hotLimit}. Период спроса: {data.demandDays} дн.
-							Обновлено: {statisticsDate(data.generatedAt)}.
+							Автоматический лимит: {data.hotLimit}. Ручных: {data.manualCount}.
+							Период спроса: {data.demandDays} дн. Обновлено:{' '}
+							{statisticsDate(data.generatedAt)}.
 						</p>
 						{!data.hasDemand && (
 							<p className="mb-5 rounded-md bg-tint p-4 text-caption">
@@ -95,26 +103,38 @@ export function HotStatistics({ userId }: { userId: string }) {
 									<li key={item.id} className={statisticsCard}>
 										<h3 className="text-lg font-semibold">{item.name}</h3>
 										<p className="mt-2 text-caption text-ink-muted">
-											Порций: {item.portions} · Приоритет:{' '}
-											{item.score.toLocaleString('ru-RU', {
-												maximumSignificantDigits: 3
-											})}
-											{item.salesPerDay !== null &&
-												` · Спрос: ${quantity(item.salesPerDay)} порц./сутки`}
+											{item.hotSource === 'MANUAL' ? (
+												<>
+													{item.manualHotUntil
+														? `Вручную до ${formatManualHotUntil(item.manualHotUntil)}`
+														: 'Вручную · без срока'}{' '}
+													· Порций: {item.portions}
+												</>
+											) : (
+												<>
+													Порций: {item.portions} · Приоритет:{' '}
+													{item.score.toLocaleString('ru-RU', {
+														maximumSignificantDigits: 3
+													})}
+													{item.salesPerDay !== null &&
+														` · Спрос: ${quantity(item.salesPerDay)} порц./сутки`}
+												</>
+											)}
 										</p>
 										<ul className="mt-4 space-y-3 text-caption">
-											{item.reasons.map((reason, index) => (
-												<li key={index}>
-													<b>{reason.productName}</b>: срочный остаток{' '}
-													{quantity(reason.atRisk)} {reason.unit}; блюдо может
-													использовать {quantity(reason.saves)} {reason.unit}.
-													<br />
-													<span className="text-ink-muted">
-														Ближайший срок:{' '}
-														{statisticsDate(reason.nearestExpiry)}
-													</span>
-												</li>
-											))}
+											{item.hotSource !== 'MANUAL' &&
+												item.reasons.map((reason, index) => (
+													<li key={index}>
+														<b>{reason.productName}</b>: срочный остаток{' '}
+														{quantity(reason.atRisk)} {reason.unit}; блюдо может
+														использовать {quantity(reason.saves)} {reason.unit}.
+														<br />
+														<span className="text-ink-muted">
+															Ближайший срок:{' '}
+															{statisticsDate(reason.nearestExpiry)}
+														</span>
+													</li>
+												))}
 										</ul>
 									</li>
 								))}

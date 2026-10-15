@@ -1,3 +1,4 @@
+import { HotOffersModule } from '../inventory/hot-offers.module'
 import { Module } from '@nestjs/common'
 import { PrismaService } from '../prisma.service'
 import { ManagerCatalogController } from './catalog/manager-catalog.controller'
@@ -16,7 +17,25 @@ import { StockStatisticsController } from './statistics/stock-statistics.control
 import { StockStatisticsService } from './statistics/stock-statistics.service'
 
 @Module({
-	controllers: [ManagerCatalogController, ManagerDeliveriesController, ManagerDishesController, ManagerRejectionsController, ManagerWarehouseController, ManagerStatisticsController, StockStatisticsController],
-	providers: [ManagerCatalogService, ManagerDeliveriesService, ManagerDishesService, ManagerRejectionsService, ManagerWarehouseService, ManagerStatisticsService, StockStatisticsService, PrismaService]
+	imports: [HotOffersModule],
+	controllers: [
+		ManagerCatalogController,
+		ManagerDeliveriesController,
+		ManagerDishesController,
+		ManagerRejectionsController,
+		ManagerWarehouseController,
+		ManagerStatisticsController,
+		StockStatisticsController
+	],
+	providers: [
+		ManagerCatalogService,
+		ManagerDeliveriesService,
+		ManagerDishesService,
+		ManagerRejectionsService,
+		ManagerWarehouseService,
+		ManagerStatisticsService,
+		StockStatisticsService,
+		PrismaService
+	]
 })
 export class ManagerModule {}

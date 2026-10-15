@@ -17,6 +17,10 @@ export interface ManagerDish {
 	portions: number
 	autoStop: boolean
 	manualStop: boolean
+	isHot: boolean
+	hotSource: 'MANUAL' | 'AUTO' | null
+	manualHotUntil: string | null
+	manualHotActive: boolean
 	ingredients: DishIngredient[]
 }
 export interface DishInput {
@@ -31,6 +35,15 @@ export const dishKeys = {
 		['manager', 'dishes', userId, 'detail', id] as const
 }
 export const dishesApi = {
+	setManualHot: async (id: string, expiresAt?: string | null) =>
+		(
+			await instance.put<ManagerDish>(`/manager/dishes/${id}/manual-hot`, {
+				expiresAt
+			})
+		).data,
+	removeManualHot: async (id: string) =>
+		(await instance.delete<ManagerDish>(`/manager/dishes/${id}/manual-hot`))
+			.data,
 	checkName: async (name: string, excludeId?: string) =>
 		(
 			await instance.get<{ matches: number }>('/manager/dishes/name-check', {

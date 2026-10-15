@@ -180,6 +180,8 @@ model Dish {
   ingredients DishIngredient[]
   orderItems  OrderItem[]
   stopLists   StopList[]
+  manualHotEnabled Boolean @default(false) @map("manual_hot_enabled")
+  manualHotUntil DateTime? @map("manual_hot_until")
 
   @@map("dishes")
   @@index([deletedAt, name])

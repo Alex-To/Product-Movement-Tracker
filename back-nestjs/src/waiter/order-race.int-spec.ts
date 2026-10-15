@@ -8,12 +8,13 @@ import { PrismaService } from '../prisma.service'
 import { SettingsService } from '../settings/settings.service'
 import { OrderRejectedException } from './order-rejection'
 import { WaiterService } from './waiter.service'
+import { HotOffersService } from '../inventory/hot-offers.service'
 
 const TAG = `тест гонки ${Date.now()}`
 const DAY_MS = 24 * 60 * MINUTE_MS
 
 const prisma = new PrismaService()
-const waiter = new WaiterService(prisma, new SettingsService(prisma))
+const waiter = new WaiterService(prisma, new SettingsService(prisma), new HotOffersService())
 
 let userId = ''
 let unitId = ''

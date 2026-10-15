@@ -49,11 +49,15 @@ export interface HotPreview {
 	// Есть ли заказы или отказы за период; без них считаем «продадут все N»
 	hasDemand: boolean
 	candidates: number
+	manualCount: number
 	items: {
 		id: string
 		name: string
 		portions: number
 		isHot: boolean
+		hotSource: 'MANUAL' | 'AUTO' | null
+		manualHotUntil: string | null
+		manualHotActive: boolean
 		score: number
 		// Порций в день по спросу за период; null — истории нет
 		salesPerDay: number | null
@@ -68,16 +72,26 @@ export const settingsApi = {
 		(await instance.put<SavedSettings>('/manager/settings', data)).data,
 	// Предпросмотр по настройкам из формы, даже не сохранённым
 	hotPreview: async (settings: RestaurantSettings) =>
-		(await instance.get<HotPreview>('/manager/hot-preview', { params: settings })).data
+		(
+			await instance.get<HotPreview>('/manager/hot-preview', {
+				params: settings
+			})
+		).data
 }
 
 // Окно срочности для продукта с заданным сроком хранения — как на бэкенде
 export function urgentWindowHours(
 	shelfLifeHours: number,
-	settings: Pick<RestaurantSettings, 'urgentPercent' | 'urgentMinHours' | 'urgentMaxHours'>
+	settings: Pick<
+		RestaurantSettings,
+		'urgentPercent' | 'urgentMinHours' | 'urgentMaxHours'
+	>
 ) {
 	return Math.min(
-		Math.max((shelfLifeHours * settings.urgentPercent) / 100, settings.urgentMinHours),
+		Math.max(
+			(shelfLifeHours * settings.urgentPercent) / 100,
+			settings.urgentMinHours
+		),
 		settings.urgentMaxHours
 	)
 }

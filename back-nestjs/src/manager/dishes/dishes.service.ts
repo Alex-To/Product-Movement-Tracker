@@ -13,6 +13,8 @@ import {
 	refreshAutoStops
 } from '../../inventory/availability'
 import { PrismaService } from '../../prisma.service'
+import { HotOffersService } from '../../inventory/hot-offers.service'
+import type { HotState } from '../../inventory/hot-selection'
 import {
 	detectImageExtension,
 	removeDishImage,
@@ -47,7 +49,10 @@ const select = {
 type Dish = Prisma.DishGetPayload<{ select: typeof select }>
 @Injectable()
 export class ManagerDishesService {
-	constructor(private readonly prisma: PrismaService) {}
+	constructor(
+		private readonly prisma: PrismaService,
+		private readonly hotOffers: HotOffersService
+	) {}
 	async checkName(name: string, excludeId = '') {
 		const [result] = await this.prisma.$queryRaw<
 			Array<{ matches: number }>
@@ -81,8 +86,11 @@ export class ManagerDishesService {
 							dish.ingredients.map((item) => item.idProduct)
 						)
 					)
+				const hot = new Map(
+					(await this.hotOffers.build(tx, asOf)).map((row) => [row.id, row])
+				)
 				return {
-					items: rows.map((row) => this.present(row, stock)),
+					items: rows.map((row) => this.present(row, stock, hot.get(row.id))),
 					total: await tx.dish.count({ where }),
 					page: query.page,
 					pageSize: 25,
@@ -97,13 +105,18 @@ export class ManagerDishesService {
 			async (tx) => {
 				const row = await tx.dish.findUnique({ where: { id }, select })
 				if (!row) throw new NotFoundException('Блюдо не найдено')
+				const now = new Date()
+				const hot = (await this.hotOffers.build(tx, now)).find(
+					(dish) => dish.id === id
+				)
 				return this.present(
 					row,
 					await availableStock(
 						tx,
-						new Date(),
+						now,
 						row.ingredients.map((item) => item.idProduct)
-					)
+					),
+					hot
 				)
 			},
 			{ isolationLevel: 'RepeatableRead' }
@@ -145,7 +158,11 @@ export class ManagerDishesService {
 	}
 	async trash(id: string, version: number) {
 		return inventoryTransaction(this.prisma, async (tx) => {
-			await this.advance(tx, id, version, false, { deletedAt: new Date() })
+			await this.advance(tx, id, version, false, {
+				deletedAt: new Date(),
+				manualHotEnabled: false,
+				manualHotUntil: null
+			})
 			// Блюдо в корзине не считается: авто-стоп закрываем, запись остаётся в истории
 			await tx.stopList.updateMany({
 				where: { idDish: id, type: 'AUTO', ...OPEN_STOP },
@@ -161,12 +178,70 @@ export class ManagerDishesService {
 			return this.saved(tx, id)
 		})
 	}
+	async setManualHot(id: string, expiresAt?: string | null) {
+		return inventoryTransaction(this.prisma, async (tx) => {
+			const now = new Date()
+			const until = expiresAt == null ? null : new Date(expiresAt)
+			if (until && (!Number.isFinite(until.getTime()) || until <= now))
+				throw new BadRequestException(
+					'Выберите будущее время окончания предложения'
+				)
+			const current = await tx.dish.findUnique({
+				where: { id },
+				select: {
+					deletedAt: true,
+					manualHotEnabled: true,
+					manualHotUntil: true
+				}
+			})
+			if (!current || current.deletedAt)
+				throw new NotFoundException('Блюдо не найдено или лежит в корзине')
+			const active =
+				current.manualHotEnabled &&
+				(!current.manualHotUntil || current.manualHotUntil > now)
+			if (!active) {
+				const dish = (await this.hotOffers.build(tx, now)).find(
+					(row) => row.id === id
+				)
+				if (!dish || dish.isStopped || dish.portions <= 0)
+					throw new ConflictException(
+						'Блюдо сейчас недоступно для приготовления'
+					)
+				if (dish.hotSource === 'AUTO')
+					throw new ConflictException(
+						'Блюдо уже выбрано автоматически. Обновите список'
+					)
+			}
+			await tx.dish.update({
+				where: { id },
+				data: { manualHotEnabled: true, manualHotUntil: until }
+			})
+			return (await this.saved(tx, id)).dish
+		})
+	}
+	async removeManualHot(id: string) {
+		return inventoryTransaction(this.prisma, async (tx) => {
+			const dish = await tx.dish.findUnique({
+				where: { id },
+				select: { deletedAt: true }
+			})
+			if (!dish || dish.deletedAt)
+				throw new NotFoundException('Блюдо не найдено или лежит в корзине')
+			await tx.dish.update({
+				where: { id },
+				data: { manualHotEnabled: false, manualHotUntil: null }
+			})
+			return (await this.saved(tx, id)).dish
+		})
+	}
 	async setImage(id: string, file?: UploadedImage) {
 		if (!file?.buffer?.length)
 			throw new BadRequestException('Выберите файл с фото блюда')
 		const ext = detectImageExtension(file.buffer)
 		if (!ext)
-			throw new BadRequestException('Фото должно быть в формате JPEG, PNG или WebP')
+			throw new BadRequestException(
+				'Фото должно быть в формате JPEG, PNG или WebP'
+			)
 		const dish = await this.activeDish(id)
 		const image = await saveDishImage(id, file.buffer, ext)
 		await this.prisma.dish.update({ where: { id }, data: { image } })
@@ -241,15 +316,23 @@ export class ManagerDishesService {
 		const [{ matches }] = await tx.$queryRaw<
 			Array<{ matches: number }>
 		>`SELECT count(*)::int AS matches FROM dishes WHERE id_dish <> ${id} AND deleted_at IS NULL AND lower(regexp_replace(btrim(name), '[[:space:]]+', ' ', 'g')) = lower(${dish.name})`
+		const now = new Date()
+		const hot = (await this.hotOffers.build(tx, now)).find(
+			(row) => row.id === id
+		)
 		return {
-			dish: this.present(dish, await availableStock(tx)),
+			dish: this.present(dish, await availableStock(tx, now), hot),
 			warnings:
 				!dish.deletedAt && matches
 					? ['Блюдо с таким названием уже есть. Сохранена отдельная запись.']
 					: []
 		}
 	}
-	private present(dish: Dish, stock: Map<string, Prisma.Decimal>) {
+	private present(
+		dish: Dish,
+		stock: Map<string, Prisma.Decimal>,
+		hot?: HotState
+	) {
 		const portions = countPortions(dish.ingredients, stock)
 		return {
 			id: dish.id,
@@ -257,6 +340,10 @@ export class ManagerDishesService {
 			version: dish.version,
 			deletedAt: dish.deletedAt,
 			image: dish.image,
+			isHot: hot?.isHot ?? false,
+			hotSource: hot?.hotSource ?? null,
+			manualHotUntil: hot?.manualHotUntil ?? null,
+			manualHotActive: hot?.manualHotActive ?? false,
 			portions,
 			autoStop:
 				!dish.deletedAt &&

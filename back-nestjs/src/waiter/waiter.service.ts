@@ -15,28 +15,16 @@ import {
 } from '../inventory/availability'
 import { allocateFefo } from '../inventory/fefo'
 import {
-	compareByPriority,
-	type HotBatch,
-	pickHot,
-	scoreDish
-} from '../inventory/hot-offers'
+	HotOffersService,
+	type MenuSettings
+} from '../inventory/hot-offers.service'
 import {
 	findShortages,
 	mergeOrderLines,
 	type OrderLine,
 	orderNeed
 } from '../inventory/order-need'
-import {
-	collectDemand,
-	type DemandEvent,
-	salesRatePerHour
-} from '../inventory/demand'
-import {
-	type ExpirySettings,
-	expiryPolicy,
-	HOUR_MS,
-	usableAfter
-} from '../inventory/expiry'
+import { usableAfter } from '../inventory/expiry'
 import { loadExpiryPolicy } from '../inventory/policy'
 import { SettingsService } from '../settings/settings.service'
 import { nextOrderNumber } from './order-number'
@@ -48,171 +36,29 @@ type Decimal = Prisma.Decimal
 
 const ZERO = new Prisma.Decimal(0)
 
-// Сколько блюд после горячих показывать в предпросмотре менеджера
-const PREVIEW_EXTRA = 5
-
-type MenuSettings = ExpirySettings & { hotLimit: number; demandDays: number }
-
-// Строка чека в журнале отказов; blocked — блюдо и было причиной отказа
-type StoredRejectionLine = { dishId?: string; count: number; blocked?: boolean }
-
 @Injectable()
 export class WaiterService {
 	constructor(
 		private prisma: PrismaService,
-		private settings: SettingsService
+		private settings: SettingsService,
+		private hotOffers: HotOffersService
 	) {}
 
 	async getMenu() {
-		const rows = await this.buildMenu(await this.settings.get(), new Date())
+		const rows = await this.prisma.$transaction(
+			(tx) => this.hotOffers.build(tx),
+			{ isolationLevel: 'RepeatableRead' }
+		)
 		// Официанту — только отметка «горячее», без объяснения
 		return rows.map(({ score, reasons, salesPerDay, ...dish }) => dish)
 	}
 
-	/**
-	 * Предпросмотр для менеджера на странице настроек: какие блюда сейчас горячие
-	 * и почему. Можно передать ещё не сохранённые настройки — «что будет, если»
-	 */
 	async hotPreview(overrides: Partial<MenuSettings>) {
 		const settings = { ...(await this.settings.get()), ...overrides }
-		if (settings.urgentMaxHours < settings.urgentMinHours)
-			throw new BadRequestException(
-				'Верхняя граница срочности не может быть меньше нижней'
-			)
-		const now = new Date()
-		const rows = await this.buildMenu(settings, now)
-		const candidates = rows
-			.filter(dish => !dish.isStopped && dish.score > 0)
-			.sort(compareByPriority)
-		return {
-			generatedAt: now.toISOString(),
-			hotLimit: settings.hotLimit,
-			demandDays: settings.demandDays,
-			// Нет ни заказов, ни отказов за период — считаем «продадут все N»
-			hasDemand: rows.some(dish => dish.salesPerDay !== null),
-			candidates: candidates.length,
-			// Горячие и несколько следующих — чтобы было видно, кто на подходе
-			items: candidates.slice(0, settings.hotLimit + PREVIEW_EXTRA).map(dish => ({
-				id: dish.id,
-				name: dish.name,
-				portions: dish.portions,
-				isHot: dish.isHot,
-				// Три значащие цифры: у редко заказываемых блюд приоритет бывает 0,0004 — это не ноль
-				score: Number(dish.score.toPrecision(3)),
-				salesPerDay:
-					dish.salesPerDay === null ? null : Math.round(dish.salesPerDay * 10) / 10,
-				reasons: dish.reasons.slice(0, 3)
-			}))
-		}
-	}
-
-	private async buildMenu(settings: MenuSettings, now: Date) {
-		const policy = expiryPolicy(settings)
-		const usableFrom = usableAfter(now, policy)
-
-		const [dishes, batches, demand] = await Promise.all([
-			this.prisma.dish.findMany({
-				where: { deletedAt: null },
-				orderBy: { name: 'asc' },
-				select: {
-					id: true,
-					name: true,
-					image: true,
-					ingredients: {
-						select: {
-							idProduct: true,
-							count: true,
-							product: {
-								select: { nameProduct: true, unit: { select: { name: true } } }
-							}
-						}
-					},
-					stopLists: { where: OPEN_STOP, select: { type: true } }
-				}
-			}),
-			this.getUsableBatches(this.prisma, usableFrom),
-			this.loadDemand(settings.demandDays, now)
-		])
-
-		const stock = this.sumStock(batches)
-		const batchesByProduct = new Map<string, HotBatch[]>()
-		for (const batch of batches) {
-			const list = batchesByProduct.get(batch.idProduct) ?? []
-			list.push({
-				idProduct: batch.idProduct,
-				count: batch.count,
-				EXP: batch.EXP,
-				receivedAt: batch.delivery.createDate
-			})
-			batchesByProduct.set(batch.idProduct, list)
-		}
-
-		const menu = dishes.map(dish => {
-			const portions = countPortions(dish.ingredients, stock)
-			// Стоп — открытые записи стоп-листа. Авто-стоп ставят движения склада и таймер
-			// сроков; страховка на случай, если запись ещё не успела появиться
-			const stops = [
-				...new Set([
-					...dish.stopLists.map(stop => stop.type),
-					...(portions === 0 ? [StopType.AUTO] : [])
-				])
-			]
-			const isStopped = stops.length > 0 || !dish.ingredients.length
-			const { score, reasons, salesPerDay } = isStopped
-				? { score: 0, reasons: [], salesPerDay: null }
-				: scoreDish(
-						{
-							id: dish.id,
-							name: dish.name,
-							portions,
-							ingredients: dish.ingredients.map(i => ({
-								idProduct: i.idProduct,
-								count: i.count,
-								productName: i.product.nameProduct,
-								unit: i.product.unit.name
-							}))
-						},
-						batchesByProduct,
-						now,
-						policy,
-						salesRatePerHour(demand, dish.id)
-					)
-
-			return {
-				id: dish.id,
-				name: dish.name,
-				image: dish.image,
-				portions,
-				hasRecipe: dish.ingredients.length > 0,
-				// Фронту для проверки всего чека: у разных блюд бывают общие продукты
-				ingredients: dish.ingredients.map(i => ({
-					productId: i.idProduct,
-					name: i.product.nameProduct,
-					perPortion: i.count.toString(),
-					available: (stock.get(i.idProduct) ?? ZERO).toString()
-				})),
-				stops,
-				missing: dish.ingredients
-					.filter(i => (stock.get(i.idProduct) ?? ZERO).lt(i.count))
-					.map(i => i.product.nameProduct),
-				isStopped,
-				score,
-				reasons,
-				salesPerDay
-			}
-		})
-
-		// Горячие наверху по приоритету, остальные — по названию; стоп-лист в конце
-		const hot = pickHot(
-			menu.filter(dish => !dish.isStopped),
-			settings.hotLimit
+		return this.prisma.$transaction(
+			(tx) => this.hotOffers.preview(tx, settings),
+			{ isolationLevel: 'RepeatableRead' }
 		)
-		const available = menu.filter(dish => !dish.isStopped).sort(compareByPriority)
-		const stopped = menu.filter(dish => dish.isStopped)
-		return [...available, ...stopped].map(dish => ({
-			...dish,
-			isHot: hot.has(dish.id)
-		}))
 	}
 
 	async createOrder(userId: string, dto: CreateOrderDto) {
@@ -220,7 +66,7 @@ export class WaiterService {
 		try {
 			return await inventoryTransaction(
 				this.prisma,
-				tx => this.placeOrder(tx, userId, lines),
+				(tx) => this.placeOrder(tx, userId, lines),
 				() => new OrderRejectedException(RejectionReason.BUSY, BUSY_MESSAGE)
 			)
 		} catch (error) {
@@ -240,7 +86,7 @@ export class WaiterService {
 		const policy = await loadExpiryPolicy(tx)
 		// Из партий, которые истекут раньше, чем успеют приготовить, не списываем
 		const usableFrom = usableAfter(now, policy)
-		const dishIds = [...new Set(lines.map(line => line.dishId))]
+		const dishIds = [...new Set(lines.map((line) => line.dishId))]
 
 		const dishes = await tx.dish.findMany({
 			where: { id: { in: dishIds }, deletedAt: null },
@@ -267,18 +113,18 @@ export class WaiterService {
 			throw new NotFoundException('Блюдо не найдено — обновите меню')
 		}
 
-		const withoutRecipe = dishes.filter(dish => !dish.ingredients.length)
+		const withoutRecipe = dishes.filter((dish) => !dish.ingredients.length)
 		if (withoutRecipe.length) {
 			throw new BadRequestException(
-				`У блюда не задан состав: ${withoutRecipe.map(d => d.name).join(', ')}`
+				`У блюда не задан состав: ${withoutRecipe.map((d) => d.name).join(', ')}`
 			)
 		}
 
-		const dishById = new Map(dishes.map(dish => [dish.id, dish]))
+		const dishById = new Map(dishes.map((dish) => [dish.id, dish]))
 		for (const line of lines) {
 			const dish = dishById.get(line.dishId)!
-			const recipe = new Set(dish.ingredients.map(i => i.idProduct))
-			if (line.excluded.some(id => !recipe.has(id))) {
+			const recipe = new Set(dish.ingredients.map((i) => i.idProduct))
+			if (line.excluded.some((id) => !recipe.has(id))) {
 				throw new BadRequestException(
 					`Состав блюда «${dish.name}» изменился — обновите меню`
 				)
@@ -291,30 +137,30 @@ export class WaiterService {
 		}
 
 		const productIds = [
-			...new Set(dishes.flatMap(d => d.ingredients.map(i => i.idProduct)))
+			...new Set(dishes.flatMap((d) => d.ingredients.map((i) => i.idProduct)))
 		]
 		const batches = await this.getUsableBatches(tx, usableFrom, productIds)
 		const stock = this.sumStock(batches)
 
 		const availablePortions = () =>
-			dishes.map(dish => ({
+			dishes.map((dish) => ({
 				dishId: dish.id,
 				name: dish.name,
 				portions:
 					dish.stopLists.length > 0 ? 0 : countPortions(dish.ingredients, stock)
 			}))
 
-		const stopped = dishes.filter(dish => dish.stopLists.length > 0)
+		const stopped = dishes.filter((dish) => dish.stopLists.length > 0)
 		if (stopped.length) {
 			throw new OrderRejectedException(
 				RejectionReason.STOP_LIST,
 				{
 					message: 'Заказ не принят: блюдо в стоп-листе',
-					stopped: stopped.map(dish => dish.name),
+					stopped: stopped.map((dish) => dish.name),
 					shortages: [],
 					available: availablePortions()
 				},
-				stopped.map(dish => dish.id)
+				stopped.map((dish) => dish.id)
 			)
 		}
 
@@ -324,18 +170,21 @@ export class WaiterService {
 			// Блюда, которым не хватило продукта (с учётом того, что гость просил убрать)
 			const short = new Set(
 				[...need]
-					.filter(([productId, entry]) => (stock.get(productId) ?? ZERO).lt(entry.amount))
+					.filter(([productId, entry]) =>
+						(stock.get(productId) ?? ZERO).lt(entry.amount)
+					)
 					.map(([productId]) => productId)
 			)
 			const blocked = lines
-				.filter(line =>
+				.filter((line) =>
 					dishById
 						.get(line.dishId)!
 						.ingredients.some(
-							i => short.has(i.idProduct) && !line.excluded.includes(i.idProduct)
+							(i) =>
+								short.has(i.idProduct) && !line.excluded.includes(i.idProduct)
 						)
 				)
-				.map(line => line.dishId)
+				.map((line) => line.dishId)
 			throw new OrderRejectedException(
 				RejectionReason.SHORTAGE,
 				{
@@ -349,7 +198,7 @@ export class WaiterService {
 		}
 
 		const takes = allocateFefo(
-			batches.map(batch => ({
+			batches.map((batch) => ({
 				id: batch.id,
 				idProduct: batch.idProduct,
 				count: batch.count,
@@ -359,7 +208,8 @@ export class WaiterService {
 			new Map([...need].map(([productId, entry]) => [productId, entry.amount]))
 		)
 		// После проверки нехватки так быть не может — значит, остатки меняются прямо сейчас
-		if (!takes) throw new OrderRejectedException(RejectionReason.BUSY, BUSY_MESSAGE)
+		if (!takes)
+			throw new OrderRejectedException(RejectionReason.BUSY, BUSY_MESSAGE)
 
 		// Номер — следующий за последним заказом. Два заказа одновременно прочитают
 		// одного и того же «последнего» — Serializable откатит один, и он возьмёт следующий
@@ -373,11 +223,11 @@ export class WaiterService {
 				createDate: now,
 				number: nextOrderNumber(last?.number ?? null),
 				items: {
-					create: lines.map(line => ({
+					create: lines.map((line) => ({
 						idDish: line.dishId,
 						count: line.count,
 						exclusions: {
-							create: line.excluded.map(idProduct => ({ idProduct }))
+							create: line.excluded.map((idProduct) => ({ idProduct }))
 						}
 					}))
 				}
@@ -396,7 +246,12 @@ export class WaiterService {
 				throw new OrderRejectedException(RejectionReason.BUSY, BUSY_MESSAGE)
 			}
 			await tx.stockMovement.create({
-				data: { idBatch: batchId, count: take, idOrder: order.id, createrId: userId }
+				data: {
+					idBatch: batchId,
+					count: take,
+					idOrder: order.id,
+					createrId: userId
+				}
 			})
 		}
 
@@ -410,37 +265,6 @@ export class WaiterService {
 		return order
 	}
 
-	/**
-	 * Спрос за период: порции из принятых заказов и из отказов, где блюдо
-	 * было причиной. Отказы «склад был занят» не считаем — их сразу отправляют снова
-	 */
-	private async loadDemand(demandDays: number, now: Date) {
-		const since = new Date(now.getTime() - demandDays * 24 * HOUR_MS)
-		const [items, rejections] = await Promise.all([
-			this.prisma.orderItem.findMany({
-				where: { order: { createDate: { gte: since } } },
-				select: { idDish: true, count: true, order: { select: { createDate: true } } }
-			}),
-			this.prisma.orderRejection.findMany({
-				where: {
-					createDate: { gte: since },
-					reason: { in: [RejectionReason.STOP_LIST, RejectionReason.SHORTAGE] }
-				},
-				select: { createDate: true, lines: true }
-			})
-		])
-		const events: DemandEvent[] = items.map(item => ({
-			dishId: item.idDish,
-			portions: item.count,
-			at: item.order.createDate
-		}))
-		for (const rejection of rejections)
-			for (const line of rejection.lines as StoredRejectionLine[])
-				if (line.blocked && line.dishId)
-					events.push({ dishId: line.dishId, portions: line.count, at: rejection.createDate })
-		return collectDemand(events, since, now)
-	}
-
 	// Годные для готовки партии в порядке FEFO: срок позже «сейчас + запас»;
 	// при равных сроках раньше идёт то, что раньше принято
 	private getUsableBatches(db: Db, usableFrom: Date, productIds?: string[]) {
@@ -450,7 +274,11 @@ export class WaiterService {
 				count: { gt: 0 },
 				...(productIds && { idProduct: { in: productIds } })
 			},
-			orderBy: [{ EXP: 'asc' }, { delivery: { createDate: 'asc' } }, { id: 'asc' }],
+			orderBy: [
+				{ EXP: 'asc' },
+				{ delivery: { createDate: 'asc' } },
+				{ id: 'asc' }
+			],
 			select: {
 				id: true,
 				idProduct: true,
@@ -471,5 +299,4 @@ export class WaiterService {
 		}
 		return stock
 	}
-
 }

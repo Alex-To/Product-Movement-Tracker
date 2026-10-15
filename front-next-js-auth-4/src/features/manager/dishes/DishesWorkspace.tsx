@@ -14,6 +14,7 @@ import { managerKeys } from '../api/manager.keys'
 import { catalogInput } from '../products/styles'
 import { dishesApi, dishKeys, type ManagerDish } from './dishes.api'
 import { DishesUserContext } from './DishesContext'
+import { ManualHotControl } from './ManualHotControl'
 
 type Confirmation = { dish: ManagerDish; action: 'trash' | 'restore' }
 function Workspace({
@@ -35,6 +36,8 @@ function Workspace({
 	const query = useQuery({
 		queryKey: dishKeys.list(userId, filters),
 		queryFn: () => dishesApi.list(filters),
+		refetchInterval: 15000,
+		refetchOnWindowFocus: true,
 		retry: false
 	})
 	const change = useMutation({
@@ -180,6 +183,7 @@ function Workspace({
 												)}
 											</Link>
 											<div className="px-3 pb-3">
+												<ManualHotControl dish={dish} userId={userId} />
 												<Button
 													size="sm"
 													variant="ghost"
