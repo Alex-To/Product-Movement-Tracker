@@ -9,14 +9,15 @@ class AuthTokenService {
 
 	saveAccessToken(accessToken: string) {
 		Cookies.set(AuthToken.ACCESS_TOKEN, accessToken, {
-			domain: 'localhost',
+			path: '/',
+			secure: window.location.protocol === 'https:',
 			sameSite: 'strict',
 			expires: 1
 		})
 	}
 
 	removeAccessToken() {
-		Cookies.remove(AuthToken.ACCESS_TOKEN)
+		Cookies.remove(AuthToken.ACCESS_TOKEN, { path: '/' })
 	}
 }
 

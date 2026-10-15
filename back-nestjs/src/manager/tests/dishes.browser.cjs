@@ -60,29 +60,35 @@ async function run() {
 			}),
 			errors = []
 		page.on('pageerror', (e) => errors.push(e.message))
-		await page.route('http://localhost:4200/api/**', async (route) => {
-			if (route.request().method() === 'OPTIONS')
-				return route.fulfill({
-					status: 204,
+		await page.route(
+			/http:\/\/localhost:(?:4200|3100)\/api\//,
+			async (route) => {
+				if (route.request().method() === 'OPTIONS')
+					return route.fulfill({
+						status: 204,
+						headers: {
+							'access-control-allow-origin': 'http://localhost:3100',
+							'access-control-allow-credentials': 'true',
+							'access-control-allow-headers': 'content-type,authorization',
+							'access-control-allow-methods': 'GET,POST,PATCH,DELETE'
+						}
+					})
+				const response = await route.fetch({
+					url: route
+						.request()
+						.url()
+						.replace(/^http:\/\/localhost:(?:4200|3100)(?=\/api\/)/, api)
+				})
+				await route.fulfill({
+					response,
 					headers: {
+						...response.headers(),
 						'access-control-allow-origin': 'http://localhost:3100',
-						'access-control-allow-credentials': 'true',
-						'access-control-allow-headers': 'content-type,authorization',
-						'access-control-allow-methods': 'GET,POST,PATCH,DELETE'
+						'access-control-allow-credentials': 'true'
 					}
 				})
-			const response = await route.fetch({
-				url: route.request().url().replace('http://localhost:4200', api)
-			})
-			await route.fulfill({
-				response,
-				headers: {
-					...response.headers(),
-					'access-control-allow-origin': 'http://localhost:3100',
-					'access-control-allow-credentials': 'true'
-				}
-			})
-		})
+			}
+		)
 		await page.goto('http://localhost:3100/auth/login')
 		await page.getByPlaceholder('Введите логин').fill('dish-manager')
 		await page.getByPlaceholder('Введите пароль').fill('dish-test-password')

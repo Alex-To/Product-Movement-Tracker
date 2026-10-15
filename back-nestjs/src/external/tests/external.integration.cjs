@@ -561,23 +561,29 @@ async function browserTest({ app, p, users, tokens, other, replacement }) {
 			}
 		])
 		const api = 'http://127.0.0.1:' + app.getHttpServer().address().port
-		await page.route('http://localhost:4200/api/**', async (route) => {
-			const headers = {
-				'access-control-allow-origin': 'http://localhost:3100',
-				'access-control-allow-credentials': 'true',
-				'access-control-allow-headers': 'content-type,authorization',
-				'access-control-allow-methods': 'GET,POST,DELETE'
+		await page.route(
+			/http:\/\/localhost:(?:4200|3100)\/api\//,
+			async (route) => {
+				const headers = {
+					'access-control-allow-origin': 'http://localhost:3100',
+					'access-control-allow-credentials': 'true',
+					'access-control-allow-headers': 'content-type,authorization',
+					'access-control-allow-methods': 'GET,POST,DELETE'
+				}
+				if (route.request().method() === 'OPTIONS')
+					return route.fulfill({ status: 204, headers })
+				const response = await route.fetch({
+					url: route
+						.request()
+						.url()
+						.replace(/^http:\/\/localhost:(?:4200|3100)(?=\/api\/)/, api)
+				})
+				return route.fulfill({
+					response,
+					headers: { ...response.headers(), ...headers }
+				})
 			}
-			if (route.request().method() === 'OPTIONS')
-				return route.fulfill({ status: 204, headers })
-			const response = await route.fetch({
-				url: route.request().url().replace('http://localhost:4200', api)
-			})
-			return route.fulfill({
-				response,
-				headers: { ...response.headers(), ...headers }
-			})
-		})
+		)
 		await page.goto('http://localhost:3100/manager/external-interfaces')
 		await page
 			.getByRole('heading', { name: 'Внешние интерфейсы', exact: true })

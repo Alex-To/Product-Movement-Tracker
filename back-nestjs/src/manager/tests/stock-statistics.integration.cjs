@@ -332,23 +332,29 @@ async function run() {
 				}
 			])
 			const api = `http://127.0.0.1:${app.getHttpServer().address().port}`
-			await page.route('http://localhost:4200/api/**', async (route) => {
-				const headers = {
-					'access-control-allow-origin': 'http://localhost:3100',
-					'access-control-allow-credentials': 'true',
-					'access-control-allow-headers': 'content-type,authorization',
-					'access-control-allow-methods': 'GET,POST'
+			await page.route(
+				/http:\/\/localhost:(?:4200|3100)\/api\//,
+				async (route) => {
+					const headers = {
+						'access-control-allow-origin': 'http://localhost:3100',
+						'access-control-allow-credentials': 'true',
+						'access-control-allow-headers': 'content-type,authorization',
+						'access-control-allow-methods': 'GET,POST'
+					}
+					if (route.request().method() === 'OPTIONS')
+						return route.fulfill({ status: 204, headers })
+					const response = await route.fetch({
+						url: route
+							.request()
+							.url()
+							.replace(/^http:\/\/localhost:(?:4200|3100)(?=\/api\/)/, api)
+					})
+					await route.fulfill({
+						response,
+						headers: { ...response.headers(), ...headers }
+					})
 				}
-				if (route.request().method() === 'OPTIONS')
-					return route.fulfill({ status: 204, headers })
-				const response = await route.fetch({
-					url: route.request().url().replace('http://localhost:4200', api)
-				})
-				await route.fulfill({
-					response,
-					headers: { ...response.headers(), ...headers }
-				})
-			})
+			)
 			await page.goto('http://localhost:3100/manager/statistics')
 			await page
 				.getByRole('button', { name: 'Что заказать', exact: true })
@@ -380,9 +386,7 @@ async function run() {
 			await page.getByLabel('С даты', { exact: true }).fill('2026-10-01')
 			await page.getByLabel('По дату включительно').fill('2026-10-01')
 			await page.getByRole('button', { name: 'Показать', exact: true }).click()
-			await page
-				.getByRole('img', { name: /История списаний, кг/ })
-				.waitFor()
+			await page.getByRole('img', { name: /История списаний, кг/ }).waitFor()
 			await page
 				.getByRole('button', { name: 'По времени', exact: true })
 				.first()

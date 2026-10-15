@@ -15,7 +15,6 @@ import { AuthToken } from './types/auth.types'
 
 // Те же параметры, что у cookie, которую ставит фронт (auth-token.service)
 const ACCESS_COOKIE_OPTIONS = {
-	domain: 'localhost',
 	path: '/',
 	sameSite: 'strict',
 	maxAge: 60 * 60 * 24
@@ -26,11 +25,12 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
 	const response = await protectRoute(request)
 
 	if (freshAccessToken) {
-		response.cookies.set(
-			AuthToken.ACCESS_TOKEN,
-			freshAccessToken,
-			ACCESS_COOKIE_OPTIONS
-		)
+		response.cookies.set(AuthToken.ACCESS_TOKEN, freshAccessToken, {
+			...ACCESS_COOKIE_OPTIONS,
+			secure:
+				(request.headers.get('x-forwarded-proto') ||
+					request.nextUrl.protocol.replace(':', '')) === 'https'
+		})
 	}
 
 	return response

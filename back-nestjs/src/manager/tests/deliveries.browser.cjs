@@ -62,38 +62,44 @@ async function run() {
 			errors = []
 		page.on('pageerror', (e) => errors.push(e.message))
 		let dropFirstReceipt = true
-		await page.route('http://localhost:4200/api/**', async (route) => {
-			if (route.request().method() === 'OPTIONS')
-				return route.fulfill({
-					status: 204,
+		await page.route(
+			/http:\/\/localhost:(?:4200|3100)\/api\//,
+			async (route) => {
+				if (route.request().method() === 'OPTIONS')
+					return route.fulfill({
+						status: 204,
+						headers: {
+							'access-control-allow-origin': 'http://localhost:3100',
+							'access-control-allow-credentials': 'true',
+							'access-control-allow-headers': 'content-type,authorization',
+							'access-control-allow-methods': 'GET,POST,PATCH,DELETE'
+						}
+					})
+				const response = await route.fetch({
+					url: route
+						.request()
+						.url()
+						.replace(/^http:\/\/localhost:(?:4200|3100)(?=\/api\/)/, api)
+				})
+				if (
+					dropFirstReceipt &&
+					route.request().method() === 'POST' &&
+					route.request().url().endsWith('/manager/deliveries')
+				) {
+					dropFirstReceipt = false
+					await route.abort('failed')
+					return
+				}
+				await route.fulfill({
+					response,
 					headers: {
+						...response.headers(),
 						'access-control-allow-origin': 'http://localhost:3100',
-						'access-control-allow-credentials': 'true',
-						'access-control-allow-headers': 'content-type,authorization',
-						'access-control-allow-methods': 'GET,POST,PATCH,DELETE'
+						'access-control-allow-credentials': 'true'
 					}
 				})
-			const response = await route.fetch({
-				url: route.request().url().replace('http://localhost:4200', api)
-			})
-			if (
-				dropFirstReceipt &&
-				route.request().method() === 'POST' &&
-				route.request().url().endsWith('/manager/deliveries')
-			) {
-				dropFirstReceipt = false
-				await route.abort('failed')
-				return
 			}
-			await route.fulfill({
-				response,
-				headers: {
-					...response.headers(),
-					'access-control-allow-origin': 'http://localhost:3100',
-					'access-control-allow-credentials': 'true'
-				}
-			})
-		})
+		)
 		await page.goto('http://localhost:3100/auth/login')
 		await page.getByPlaceholder('Введите логин').fill('receipt-manager')
 		await page.getByPlaceholder('Введите пароль').fill('receipt-test-password')
@@ -138,8 +144,16 @@ async function run() {
 			return d.toISOString().slice(0, 16)
 		}
 		const manualReceiptDate = expiry(-2)
-		await page.getByLabel('Дата и время приёма (необязательно)', { exact: true }).fill(manualReceiptDate)
-		assert(await page.getByRole('link', { name: 'Нет продукта в системе? Добавить продукт ↗' }).getAttribute('target') === '_blank')
+		await page
+			.getByLabel('Дата и время приёма (необязательно)', { exact: true })
+			.fill(manualReceiptDate)
+		assert(
+			(await page
+				.getByRole('link', {
+					name: 'Нет продукта в системе? Добавить продукт ↗'
+				})
+				.getAttribute('target')) === '_blank'
+		)
 		await page.getByText('Единица: кг', { exact: true }).first().waitFor()
 		await page
 			.getByLabel('Годен до · строка 1', { exact: true })
@@ -183,7 +197,10 @@ async function run() {
 			.getByRole('heading', { name: 'Накладная № Н-001', exact: true })
 			.waitFor()
 		assert.equal(await prisma.delivery.count(), 1)
-		assert.equal((await prisma.delivery.findFirst()).createDate.toISOString(), new Date(manualReceiptDate).toISOString())
+		assert.equal(
+			(await prisma.delivery.findFirst()).createDate.toISOString(),
+			new Date(manualReceiptDate).toISOString()
+		)
 		assert.equal(await prisma.batch.count(), 2)
 		assert.equal(
 			(

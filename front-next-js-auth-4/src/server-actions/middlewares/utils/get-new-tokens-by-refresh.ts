@@ -1,6 +1,5 @@
 'use server'
 
-import { API_URL } from '@/constants'
 import { IUser } from '@/types/user.types'
 
 interface IAuthResponse {
@@ -9,7 +8,9 @@ interface IAuthResponse {
 }
 
 export async function getNewTokensByRefresh(refreshToken: string) {
-	const response = await fetch(`${API_URL}/auth/access-token`, {
+	const internalApi =
+		process.env.API_INTERNAL_URL || 'http://127.0.0.1:4200/api'
+	const response = await fetch(`${internalApi}/auth/access-token`, {
 		method: 'POST',
 		headers: {
 			'Content-Type': 'application/json',

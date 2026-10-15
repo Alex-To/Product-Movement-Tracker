@@ -2,11 +2,11 @@
 
 import { ITokenInside } from '@/types/auth.types'
 import { transformUserToState } from '@/utils/transform-user-to-state'
-import * as jose from 'jose'
+import { jwtVerify } from 'jose/jwt/verify'
 
 export async function jwtVerifyServer(accessToken: string) {
 	try {
-		const { payload }: { payload: ITokenInside } = await jose.jwtVerify(
+		const { payload }: { payload: ITokenInside } = await jwtVerify(
 			accessToken,
 			new TextEncoder().encode(`${process.env.JWT_SECRET}`)
 		)

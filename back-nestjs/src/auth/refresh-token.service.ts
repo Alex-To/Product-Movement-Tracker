@@ -1,8 +1,21 @@
 import { Injectable } from '@nestjs/common'
+import { ConfigService } from '@nestjs/config'
 import type { Response } from 'express'
 
 @Injectable()
 export class RefreshTokenService {
+	constructor(private readonly config: ConfigService) {}
+	private get cookieOptions() {
+		return {
+			httpOnly: true,
+			path: '/',
+			sameSite: 'lax' as const,
+			secure:
+				this.config.get('COOKIE_SECURE') === 'true' ||
+				(this.config.get('NODE_ENV') === 'production' &&
+					this.config.get('COOKIE_SECURE') !== 'false')
+		}
+	}
 	readonly EXPIRE_DAY_REFRESH_TOKEN = 1
 	readonly REFRESH_TOKEN_NAME = 'refreshToken'
 
@@ -11,21 +24,15 @@ export class RefreshTokenService {
 		expiresIn.setDate(expiresIn.getDate() + this.EXPIRE_DAY_REFRESH_TOKEN)
 
 		res.cookie(this.REFRESH_TOKEN_NAME, refreshToken, {
-			httpOnly: true,
-			domain: 'localhost',
-			expires: expiresIn,
-			secure: true,
-			sameSite: 'none'
+			...this.cookieOptions,
+			expires: expiresIn
 		})
 	}
 
 	removeRefreshTokenFromResponse(res: Response) {
 		res.cookie(this.REFRESH_TOKEN_NAME, '', {
-			httpOnly: true,
-			domain: 'localhost',
-			expires: new Date(0),
-			secure: true,
-			sameSite: 'none'
+			...this.cookieOptions,
+			expires: new Date(0)
 		})
 	}
 }
