@@ -1,5 +1,6 @@
 import { Transform, Type } from 'class-transformer'
 import {
+	IsDateString,
 	ArrayMaxSize,
 	ArrayMinSize,
 	ArrayUnique,
@@ -15,6 +16,15 @@ import {
 	Min,
 	ValidateNested
 } from 'class-validator'
+
+export class ManualHotOfferDto {
+	@IsOptional()
+	@IsDateString({ strict: true })
+	@Matches(/T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?(?:Z|[+-]\d{2}:\d{2})$/, {
+		message: 'Укажите дату и время с часовым поясом'
+	})
+	expiresAt?: string | null
+}
 import { normalizeCatalogName } from '../catalog/dto/catalog.dto'
 
 export class IngredientDto {

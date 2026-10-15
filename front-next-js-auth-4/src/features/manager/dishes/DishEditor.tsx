@@ -16,6 +16,7 @@ import { catalogInput, catalogLabel } from '../products/styles'
 import { dishesApi, dishKeys, type ManagerDish } from './dishes.api'
 import { DishPhoto } from './DishPhoto'
 import { useUnsavedChanges } from './useUnsavedChanges'
+import { ManualHotControl } from './ManualHotControl'
 
 type Row = {
 	productId: string
@@ -408,14 +409,15 @@ function Loaded({ id, userId }: { id: string; userId: string }) {
 		queryFn: () => dishesApi.get(id),
 		enabled: id !== 'new',
 		retry: false,
-		refetchOnWindowFocus: false,
-		staleTime: Infinity,
+		refetchOnWindowFocus: true,
+		refetchInterval: 15000,
+		staleTime: 0,
 		gcTime: 0
 	})
 	const [revision, setRevision] = useState(0)
 	if (id === 'new') return <Editor userId={userId} reload={() => {}} />
 	if (query.isPending) return <Loading label="Загрузка рецепта…" />
-	if (query.isError)
+	if (query.isError && !query.data)
 		return (
 			<div role="alert">
 				<p>{managerError(query.error)}</p>
@@ -423,16 +425,19 @@ function Loaded({ id, userId }: { id: string; userId: string }) {
 			</div>
 		)
 	return (
-		<Editor
-			key={`${id}-${revision}`}
-			dish={query.data}
-			userId={userId}
-			reload={() => {
-				query.refetch().then((result) => {
-					if (result.data) setRevision((value) => value + 1)
-				})
-			}}
-		/>
+		<>
+			<ManualHotControl dish={query.data} userId={userId} />
+			<Editor
+				key={`${id}-${revision}`}
+				dish={query.data}
+				userId={userId}
+				reload={() => {
+					query.refetch().then((result) => {
+						if (result.data) setRevision((value) => value + 1)
+					})
+				}}
+			/>
+		</>
 	)
 }
 export function DishEditorPage({ id }: { id: string }) {

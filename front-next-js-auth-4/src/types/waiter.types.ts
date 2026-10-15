@@ -18,6 +18,9 @@ export interface IMenuDish {
 	missing: string[]
 	// Горячее предложение: официант видит только отметку, без объяснения
 	isHot: boolean
+	hotSource: 'MANUAL' | 'AUTO' | null
+	manualHotUntil: string | null
+	manualHotActive: boolean
 	isStopped: boolean
 }
 

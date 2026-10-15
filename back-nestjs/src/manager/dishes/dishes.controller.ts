@@ -6,6 +6,7 @@ import {
 	Param,
 	Patch,
 	Post,
+	Put,
 	Query,
 	UploadedFile,
 	UseInterceptors,
@@ -20,7 +21,8 @@ import {
 	DishesQueryDto,
 	DishInputDto,
 	DishUpdateDto,
-	DishVersionDto
+	DishVersionDto,
+	ManualHotOfferDto
 } from './dishes.dto'
 import { ManagerDishesService } from './dishes.service'
 import { ProductNameQueryDto } from '../catalog/dto/catalog.dto'
@@ -34,6 +36,17 @@ import { ProductNameQueryDto } from '../catalog/dto/catalog.dto'
 )
 export class ManagerDishesController {
 	constructor(private readonly service: ManagerDishesService) {}
+	@Put(':id/manual-hot') @Auth(Role.MANAGER) setManualHot(
+		@Param('id') id: string,
+		@Body() dto: ManualHotOfferDto
+	) {
+		return this.service.setManualHot(id, dto.expiresAt)
+	}
+	@Delete(':id/manual-hot') @Auth(Role.MANAGER) removeManualHot(
+		@Param('id') id: string
+	) {
+		return this.service.removeManualHot(id)
+	}
 	@Get() @Auth(Role.MANAGER) list(@Query() dto: DishesQueryDto) {
 		return this.service.list(dto)
 	}
@@ -75,7 +88,9 @@ export class ManagerDishesController {
 	uploadImage(@Param('id') id: string, @UploadedFile() file?: UploadedImage) {
 		return this.service.setImage(id, file)
 	}
-	@Delete(':id/image') @Auth(Role.MANAGER) removeImage(@Param('id') id: string) {
+	@Delete(':id/image') @Auth(Role.MANAGER) removeImage(
+		@Param('id') id: string
+	) {
 		return this.service.removeImage(id)
 	}
 }

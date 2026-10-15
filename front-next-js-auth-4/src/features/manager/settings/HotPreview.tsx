@@ -9,12 +9,18 @@ import {
 	settingsApi,
 	settingsKeys
 } from './settings.api'
+import { formatManualHotUntil } from '../dishes/manual-hot-time'
 
 const formatQuantity = (value: string) =>
-	new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 3 }).format(Number(value))
+	new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 3 }).format(
+		Number(value)
+	)
 
 const formatDate = (value: string) =>
-	new Date(value).toLocaleString('ru-RU', { dateStyle: 'short', timeStyle: 'short' })
+	new Date(value).toLocaleString('ru-RU', {
+		dateStyle: 'short',
+		timeStyle: 'short'
+	})
 
 // Пока менеджер печатает, не дёргаем сервер на каждую цифру
 function useDebounced<T>(value: T, delayMs: number) {
@@ -51,14 +57,16 @@ export function HotPreview({
 			<h3 className="font-semibold">Сейчас горячие</h3>
 			<p className="mt-1 text-caption text-ink-muted">
 				Приоритет блюда — сумма по продуктам: срочность × доля срочного остатка,
-				которую блюдо успеет израсходовать до конца срока при своём темпе продаж.
-				Популярное блюдо продаётся быстрее и спасает больше. Отметку получают
-				первые блюда с приоритетом больше нуля.
+				которую блюдо успеет израсходовать до конца срока при своём темпе
+				продаж. Популярное блюдо продаётся быстрее и спасает больше. Отметку
+				получают первые блюда с приоритетом больше нуля. Ручные назначения из
+				каталога показываются первыми сверх лимита и не участвуют в
+				автоматической квоте.
 			</p>
 			{query.data && !query.data.hasDemand && (
 				<p className="mt-2 text-caption text-ink-muted">
-					За {query.data.demandDays} дн заказов не было — считаем, что продадут все
-					порции, которые можно приготовить.
+					За {query.data.demandDays} дн заказов не было — считаем, что продадут
+					все порции, которые можно приготовить.
 				</p>
 			)}
 			{query.isPending ? (
@@ -69,7 +77,7 @@ export function HotPreview({
 				</p>
 			) : !query.data.items.length ? (
 				<p className="mt-3 text-caption text-ink-muted">
-					Сейчас ни один продукт в срочных партиях не горит — горячих блюд нет.
+					Нет доступных ручных предложений и автоматических кандидатов.
 				</p>
 			) : (
 				<ol className="mt-3 space-y-3">
@@ -90,34 +98,50 @@ export function HotPreview({
 									{dish.name}
 								</span>
 								<span className="font-mono text-caption">
-									приоритет {dish.score.toLocaleString('ru-RU')} · можно{' '}
-									{dish.portions}
-									{dish.salesPerDay !== null &&
-										` · ~${dish.salesPerDay.toLocaleString('ru-RU')} в день`}
+									{dish.hotSource === 'MANUAL' ? (
+										dish.manualHotUntil ? (
+											`Вручную до ${formatManualHotUntil(dish.manualHotUntil)}`
+										) : (
+											'Вручную · без срока'
+										)
+									) : (
+										<>
+											приоритет {dish.score.toLocaleString('ru-RU')} · можно{' '}
+											{dish.portions}
+											{dish.salesPerDay !== null &&
+												` · ~${dish.salesPerDay.toLocaleString('ru-RU')} в день`}
+										</>
+									)}
 								</span>
 							</div>
 							<ul className="mt-1 space-y-0.5 text-caption">
-								{dish.reasons.map((reason) => (
-									<li key={reason.productName} className="break-words">
-										{reason.productName}: под угрозой{' '}
-										{formatQuantity(reason.atRisk)} {reason.unit}, срок{' '}
-										{formatDate(reason.nearestExpiry)} — до срока блюдо израсходует{' '}
-										{formatQuantity(reason.saves)} {reason.unit}
-									</li>
-								))}
+								{dish.hotSource !== 'MANUAL' &&
+									dish.reasons.map((reason) => (
+										<li key={reason.productName} className="break-words">
+											{reason.productName}: под угрозой{' '}
+											{formatQuantity(reason.atRisk)} {reason.unit}, срок{' '}
+											{formatDate(reason.nearestExpiry)} — до срока блюдо
+											израсходует {formatQuantity(reason.saves)} {reason.unit}
+										</li>
+									))}
 							</ul>
 							{!dish.isHot && (
-								<p className="mt-1 text-caption">На подходе: не вошло в лимит</p>
+								<p className="mt-1 text-caption">
+									На подходе: не вошло в лимит
+								</p>
 							)}
 						</li>
 					))}
 				</ol>
 			)}
-			{query.data && query.data.candidates > query.data.items.length && (
-				<p className="mt-2 text-caption text-ink-muted">
-					Всего блюд с приоритетом: {query.data.candidates}
-				</p>
-			)}
+			{query.data &&
+				query.data.candidates >
+					query.data.items.filter((item) => item.hotSource !== 'MANUAL')
+						.length && (
+					<p className="mt-2 text-caption text-ink-muted">
+						Всего блюд с приоритетом: {query.data.candidates}
+					</p>
+				)}
 		</div>
 	)
 }
