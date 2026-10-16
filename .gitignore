@@ -1,9 +1,5 @@
 # Local reports and workspace configuration
 /docs/
-/.ai/
-/.claude/
-/.codex/
-/.agents/
 /.local-backup-*/
 /.idea/compiler.xml
 
