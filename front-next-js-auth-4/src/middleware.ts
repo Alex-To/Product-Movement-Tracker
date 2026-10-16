@@ -23,6 +23,10 @@ const ACCESS_COOKIE_OPTIONS = {
 export async function middleware(request: NextRequest): Promise<NextResponse> {
 	const freshAccessToken = await refreshAccessTokenIfNeeded(request)
 	const response = await protectRoute(request)
+	// Role redirects and protected responses belong to one browser session.
+	response.headers.set('Cache-Control', 'private, no-store, max-age=0')
+	const vary = response.headers.get('Vary')
+	response.headers.set('Vary', vary ? `${vary}, Cookie` : 'Cookie')
 
 	if (freshAccessToken) {
 		response.cookies.set(AuthToken.ACCESS_TOKEN, freshAccessToken, {

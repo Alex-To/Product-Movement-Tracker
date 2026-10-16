@@ -6,7 +6,6 @@ import { useProfile } from '@/hooks/useProfile'
 import authService from '@/services/auth/auth.service'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import type { ReactNode } from 'react'
 import { TbLogout } from 'react-icons/tb'
 import { twMerge } from '@/utils/tw-merge'
@@ -40,17 +39,17 @@ export function AppHeader({
 	tabsPlacement = 'below',
 	actions
 }: Props) {
-	const router = useRouter()
 	const queryClient = useQueryClient()
 	const { user } = useProfile()
 
 	const { mutate: logout, isPending } = useMutation({
 		mutationKey: ['logout'],
 		mutationFn: () => authService.logout(),
-		onSuccess() {
+		async onSuccess() {
 			// Чтобы следующий сотрудник не увидел данные предыдущего
+			await queryClient.cancelQueries()
 			queryClient.clear()
-			router.push(PUBLIC_PAGES.LOGIN)
+			window.location.replace(PUBLIC_PAGES.LOGIN)
 		}
 	})
 

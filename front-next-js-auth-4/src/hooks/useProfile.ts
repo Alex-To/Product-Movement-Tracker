@@ -1,23 +1,16 @@
-import authService from '@/services/auth/auth.service'
 import userService from '@/services/user.service'
 import { transformUserToState } from '@/utils/transform-user-to-state'
 import { useQuery } from '@tanstack/react-query'
 
 export function useProfile() {
-	const { data, isLoading } = useQuery({
+	const { data, isLoading, refetch } = useQuery({
 		queryKey: ['profile'],
-		queryFn: () => userService.fetchProfile(),
+		queryFn: ({ signal }) => userService.fetchProfile(signal),
+		retry: false,
+		gcTime: 0,
+		staleTime: 0,
+		refetchOnMount: 'always',
 		refetchInterval: 1800000
-	})
-
-	const {
-		isSuccess,
-		data: dataTokens,
-		refetch
-	} = useQuery({
-		queryKey: ['new tokens'],
-		queryFn: () => authService.getNewTokens(),
-		enabled: !data?.data
 	})
 
 	const profile = data?.data

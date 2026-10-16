@@ -18,7 +18,7 @@ export function ManagerAccess({
 }) {
 	const session = useQuery({
 		queryKey: managerKeys.session,
-		queryFn: async () => (await userService.fetchProfile()).data,
+		queryFn: async ({ signal }) => (await userService.fetchProfile(signal)).data,
 		retry: false,
 		gcTime: 0,
 		staleTime: 0,

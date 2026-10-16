@@ -120,6 +120,11 @@ async function run() {
 	browser = await chromium.launch({ headless: true, channel: 'msedge' })
 	const page = await browser.newPage(),
 		errors = []
+	let refreshRequests = 0
+	page.on('request', (request) => {
+		if (new URL(request.url()).pathname === '/api/auth/access-token')
+			refreshRequests++
+	})
 	page.on('pageerror', (e) => errors.push(e.message))
 	await page.goto(origin + '/auth/login')
 	await page.getByLabel('Логин', { exact: true }).fill('manager')
@@ -129,6 +134,8 @@ async function run() {
 	await page.getByRole('button', { name: 'Войти', exact: true }).click()
 	await page.waitForURL(/\/manager(?:\/.*)?$/)
 	await page.getByRole('navigation', { name: 'Разделы менеджера' }).waitFor()
+	await page.getByText('manager · Менеджер', { exact: true }).waitFor()
+	assert.equal(refreshRequests, 0, 'A valid session must not refresh on profile mount')
 	let cookies = await page.context().cookies()
 	assert(
 		cookies.some(
@@ -151,6 +158,23 @@ async function run() {
 		}
 	})
 	assert.equal(profile.status(), 200)
+	assert.match(profile.headers()['cache-control'], /no-store/)
+	await page.route('**/api/auth/access-token', async (route) => {
+		await new Promise((resolve) => setTimeout(resolve, 150))
+		await route.continue()
+	})
+	let rejectedProfiles = 0
+	await page.route('**/api/users/profile', async (route) => {
+		if (rejectedProfiles++ < 2)
+			await route.fulfill({ status: 401, json: { message: 'Unauthorized' } })
+		else await route.continue()
+	})
+	await page.reload()
+	await page.getByText('manager · Менеджер', { exact: true }).waitFor()
+	await page.getByRole('heading', { name: 'Склад и сроки годности', exact: true }).waitFor()
+	assert.equal(refreshRequests, 1, 'Concurrent 401 responses must share one refresh')
+	await page.unroute('**/api/users/profile')
+	await page.unroute('**/api/auth/access-token')
 	const manager = first.find((u) => u.role === 'MANAGER')
 	const expired = app
 		.get(JwtService)
@@ -175,9 +199,65 @@ async function run() {
 	assert(
 		!cookies.some((c) => c.name === 'accessToken' || c.name === 'refreshToken')
 	)
+	for (const [login, role, home, label] of [
+		['waiter', 'WAITER', '/waiter', 'Официант'],
+		['kitchen', 'KITCHEN', '/kitchen', 'Кухня'],
+		['admin', 'ADMIN', '/admin', 'Администратор'],
+		['manager', 'MANAGER', '/manager/warehouse', 'Менеджер']
+	]) {
+		await page.getByLabel('Логин', { exact: true }).fill(login)
+		await page.getByLabel('Пароль', { exact: true }).fill('production-test-password')
+		await page.getByRole('button', { name: 'Войти', exact: true }).click()
+		await page.waitForURL(origin + home)
+		await page.getByText(`${login} · ${label}`, { exact: true }).waitFor()
+		cookies = await page.context().cookies()
+		const authorization = 'Bearer ' + cookies.find((c) => c.name === 'accessToken').value
+		const current = await page.request.get(origin + '/api/users/profile', {
+			headers: { Authorization: authorization }
+		})
+		assert.equal((await current.json()).role, role)
+		const managerOnly = await page.request.get(origin + '/api/manager/units', {
+			headers: { Authorization: authorization }
+		})
+		assert.equal(managerOnly.status(), role === 'MANAGER' ? 200 : 403)
+		const redirect = await page.request.get(origin + '/auth/login', { maxRedirects: 0 })
+		assert.equal(new URL(redirect.headers().location).pathname, home)
+		assert.match(redirect.headers()['cache-control'], /no-store/)
+		if (role === 'MANAGER') {
+			// A different browser/device must have an independent employee session.
+			const peer = await browser.newContext()
+			try {
+				const peerPage = await peer.newPage()
+				await peerPage.goto(origin + '/auth/login')
+				await peerPage.getByLabel('Логин', { exact: true }).fill('waiter')
+				await peerPage.getByLabel('Пароль', { exact: true }).fill('production-test-password')
+				await peerPage.getByRole('button', { name: 'Войти', exact: true }).click()
+				await peerPage.waitForURL(origin + '/waiter')
+				await peerPage.getByText('waiter · Официант', { exact: true }).waitFor()
+				await page.reload()
+				await page.getByText('manager · Менеджер', { exact: true }).waitFor()
+				await page.getByRole('heading', { name: 'Склад и сроки годности', exact: true }).waitFor()
+				await peerPage.getByRole('button', { name: 'Выйти', exact: true }).click()
+				await peerPage.waitForURL(origin + '/auth/login')
+				const stillManager = await page.request.get(origin + '/auth/login', { maxRedirects: 0 })
+				assert.equal(new URL(stillManager.headers().location).pathname, home)
+			} finally {
+				await peer.close()
+			}
+		}
+		await page.getByRole('button', { name: 'Выйти', exact: true }).click()
+		await page.waitForURL(origin + '/auth/login')
+		assert(!(await page.context().cookies()).some((c) =>
+			c.name === 'accessToken' || c.name === 'refreshToken'))
+	}
+	const anonymous = await browser.newContext()
+	const denied = await anonymous.request.get(origin + '/manager/warehouse', { maxRedirects: 0 })
+	assert.equal(new URL(denied.headers().location).pathname, '/auth/login')
+	assert.match(denied.headers()['cache-control'], /no-store/)
+	await anonymous.close()
 	assert.deepEqual(errors, [])
 	console.log(
-		'PASS production: clean/idempotent employee bootstrap, same-origin API, HTTP host-only cookies on non-localhost host, manager login, server-side refresh, logout'
+		'PASS production: clean bootstrap, cookies, no unsolicited refresh, single refresh for concurrent 401, server refresh, four-role switching, independent browsers, manager-only API, logout, uncached redirects/profile'
 	)
 }
 run()

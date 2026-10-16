@@ -12,6 +12,7 @@ export async function getNewTokensByRefresh(refreshToken: string) {
 		process.env.API_INTERNAL_URL || 'http://127.0.0.1:4200/api'
 	const response = await fetch(`${internalApi}/auth/access-token`, {
 		method: 'POST',
+		cache: 'no-store',
 		headers: {
 			'Content-Type': 'application/json',
 			Cookie: `refreshToken=${refreshToken}`

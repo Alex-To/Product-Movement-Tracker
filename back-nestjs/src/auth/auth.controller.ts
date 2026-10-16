@@ -1,6 +1,7 @@
 import {
 	Body,
 	Controller,
+	Header,
 	HttpCode,
 	Post,
 	Req,
@@ -24,6 +25,7 @@ export class AuthController {
 	@UsePipes(new ValidationPipe())
 	@HttpCode(200)
 	@Post('login')
+	@Header('Cache-Control', 'private, no-store')
 	async login(@Body() dto: AuthDto, @Res({ passthrough: true }) res: Response) {
 		const { refreshToken, ...response } = await this.authService.login(dto)
 
@@ -34,6 +36,7 @@ export class AuthController {
 
 	@HttpCode(200)
 	@Post('access-token')
+	@Header('Cache-Control', 'private, no-store')
 	async getNewTokens(
 		@Req() req: Request,
 		@Res({ passthrough: true }) res: Response
@@ -57,6 +60,7 @@ export class AuthController {
 
 	@HttpCode(200)
 	@Post('logout')
+	@Header('Cache-Control', 'private, no-store')
 	async logout(@Res({ passthrough: true }) res: Response) {
 		this.refreshTokenService.removeRefreshTokenFromResponse(res)
 
